@@ -18,7 +18,8 @@ def main():
     # and k=1, each point should be its own nearest neighbor
     
     for i in range(len(example_train_x)):
-        assert([i] == get_nearest_neighbors(example_train_x, example_train_x[i], 1))
+        v = get_nearest_neighbors(example_train_x, example_train_x[i], 1)
+        assert([i] == v)
         
     #########
     # Sanity Check 2: See if neighbors are right for some examples (ignoring order)
@@ -131,10 +132,9 @@ def main():
 #                       neighbors of the query point
 ######################################################################
 
-def get_nearest_neighbors(example_set, query, k):
-    distances = -2 * example_set@query.T + np.sum(query**2,axis=1) + np.sum(example_set**2,axis=1)[:, np.newaxis]
-    return np.argsort(distances, 0) [0:k]
-
+def get_nearest_neighbors(X, y, k):
+    lengths = np.linalg.norm(X-y, axis=1)
+    return np.argpartition(lengths,0)[0:k]
 
 ######################################################################
 # Q7 knn_classify_point 

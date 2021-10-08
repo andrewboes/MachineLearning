@@ -5,7 +5,7 @@
     <ProjectGuid>a34788f3-a84d-4187-b23e-6d121ffcb337</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>scratch.py</StartupFile>
+    <StartupFile>knn.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
