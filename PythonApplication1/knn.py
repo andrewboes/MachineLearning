@@ -20,7 +20,7 @@ def main():
     for i in range(len(example_train_x)):
         v = get_nearest_neighbors(example_train_x, example_train_x[i], 1)
         assert([i] == v)
-        
+    print("Sanity Check 1...Complete")
     #########
     # Sanity Check 2: See if neighbors are right for some examples (ignoring order)
     nn_idx = get_nearest_neighbors(example_train_x, np.array( [ 1, 4, 2] ), 2)
@@ -32,6 +32,7 @@ def main():
     nn_idx = get_nearest_neighbors(example_train_x, np.array( [ 10, 40, 20] ), 5)
     assert(set(nn_idx).difference(set([4, 3, 0, 2, 1]))==set())
 
+    print("Sanity Check 2...Complete")
     #########
     # Sanity Check 3: Neighbors for increasing k should be subsets
     query = np.array( [ 10, 40, 20] )
@@ -41,12 +42,15 @@ def main():
       assert(set(p_nn_idx).issubset(nn_idx))
       p_nn_idx = nn_idx
    
+    print("Sanity Check 3...Complete")
     #########
     # Test out our prediction code
     queries = np.array( [[ 10, 40, 20], [-2, 0, 5], [0,0,0]] )
     pred = predict(example_train_x, example_train_y, queries, 3)
     assert( np.all(pred == np.array([[0],[1],[0]])))
 
+
+    print("Testing Prediction code...Complete")
     #########
     # Test our our accuracy code
     true_y = np.array([[0],[1],[2],[1],[1],[0]])
@@ -56,7 +60,7 @@ def main():
     pred_y = np.array([[5],[1],[2],[0],[1],[0]])                    
     assert( compute_accuracy(true_y, pred_y) == 4/6)
 
-
+    print("Testing code accuracy...Complete")
 
     #######################################
     # Now on to the real data!
@@ -134,7 +138,7 @@ def main():
 
 def get_nearest_neighbors(X, y, k):
     lengths = np.linalg.norm(X-y, axis=1)
-    return np.argpartition(lengths,0)[0:k]
+    return np.argsort(lengths)[0:k]
 
 ######################################################################
 # Q7 knn_classify_point 
@@ -157,8 +161,12 @@ def get_nearest_neighbors(X, y, k):
 ######################################################################
 
 def knn_classify_point(examples_X, examples_y, query, k):
-    #TODO
-    return predicted_label
+
+    neighbors = get_nearest_neighbors(examples_X, query, k) #indexes of knn
+    neighborClasses = []
+    for neighbor in neighbors:
+        neighborClasses.append(examples_y[neighbor][0])
+    return np.bincount(neighborClasses).argmax()
 
 
 
