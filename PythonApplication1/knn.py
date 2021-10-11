@@ -68,8 +68,10 @@ def main():
 
     # Load training and test data as numpy matrices 
     train_X, train_y, test_X = load_data()
-
-
+    
+    #def cross_validation(train_X, train_y, num_folds=4, k=1):
+    crossValidation = cross_validation(train_X, train_y)
+    print("Testing Cross Validation...Complete")
     #######################################
     # Q9 Hyperparmeter Search
     #######################################
@@ -82,11 +84,12 @@ def main():
       #######################################
       # TODO Compute train accuracy using whole set
       #######################################
-      train_acc = 0 
-
+      
+      knn_classify_point(train_X, train_y, train_X[0], k)
       #######################################
       # TODO Compute 4-fold cross validation accuracy
       #######################################
+      #cross_validation(train_X, train_y)
       val_acc, val_acc_var = 0,0
       
       t1 = time.time()
@@ -188,7 +191,39 @@ def knn_classify_point(examples_X, examples_y, query, k):
 ######################################################################
 
 def cross_validation(train_X, train_y, num_folds=4, k=1):
-    #TODO
+    #get 6000
+    trainingData = [row for i,row in enumerate(train_X) if i % num_folds != 0]
+    trainingDataClasses = [row for i,row in enumerate(train_y) if i % num_folds != 0]
+    #get 2000
+    testData = [row for i,row in enumerate(train_X) if i % num_folds == 0]
+    answers = [row for i,row in enumerate(train_y) if i % num_folds == 0]
+    results = []
+    #"loop" through the 2000 and classify them
+    for x in testData:
+        testResult = knn_classify_point(trainingData, trainingDataClasses, x, k)
+        newResult = [0+testResult]
+        results.append(newResult)
+    avg_val_acc = compute_accuracy(answers, results)
+    #return accuracy
+    
+    
+    
+    
+
+    #n = len(train_X) #rows
+    #d = len(train_X[0]) #cols
+# =============================================================================
+#     accuracy = []
+#     for fold in range(0,num_folds):
+#         trainingData = [row for i,row in enumerate(train_X) if i < len(train 0]
+#         validationSet = [row for i,row in enumerate(train_X) if i % num_folds == 0]
+#         #"do ver every vector in validation set"
+#         knn_classify_point("training data w/o answer", "answer key of training data", "every vector in validationSet", k)
+#         #get votes on training data
+#         #get accuracy based on answers
+# =============================================================================
+    
+    
     return avg_val_acc, varr_val_acc
 
 
