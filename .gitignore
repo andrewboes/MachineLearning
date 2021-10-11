@@ -366,3 +366,5 @@ FodyWeavers.xsd
 /PythonApplication1/train_justbasic_and_occupation.csv
 /PythonApplication1/train_justbasic.csv
 /PythonApplication1/results
+/PythonApplication1/UnweightedResults
+/PythonApplication1/myoutput.txt
