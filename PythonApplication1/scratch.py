@@ -1,16 +1,42 @@
 import numpy as np
 
 def main():
-    example_train_x = np.array([ [ 1, 0, 2], [3, -2, 4], [5, -2, 4],
-                                 [ 4, 2, 1.5], [3.2, np.pi, 2], [-5, 0, 1]])
-    example_train_y = np.array([[0], [1], [1], [1], [0], [1]])
-  
-    #########
-    # Sanity Check 1: If I query with examples from the training set 
-    # and k=1, each point should be its own nearest neighbor
-    
-    for i in range(len(example_train_x)):
-        print(myKnn(example_train_x, example_train_x[i], 1))
+    numfolds = 4
+    randArray = np.random.randint(10, size=[8,8])
+    splits = np.split(randArray, numfolds) 
+    rows = int(len(randArray)/numfolds)
+    cols = int(len(randArray[0]))
+    for i in range(numfolds):
+        test = splits[i]
+        train = np.array([])
+        for j in range(numfolds):
+            if j != i:
+                if train.size == 0:
+                    train = splits[j]
+                else:
+                    train = np.vstack((train, splits[j]))
+        print("i", i)
+        print("test", test)
+        print("train", train)
+                
+        
+        
+        
+        
+        
+      
+# =============================================================================
+#     example_train_x = np.array([ [ 1, 0, 2], [3, -2, 4], [5, -2, 4],
+#                                  [ 4, 2, 1.5], [3.2, np.pi, 2], [-5, 0, 1]])
+#     example_train_y = np.array([[0], [1], [1], [1], [0], [1]])
+#   
+#     #########
+#     # Sanity Check 1: If I query with examples from the training set 
+#     # and k=1, each point should be its own nearest neighbor
+#     
+#     for i in range(len(example_train_x)):
+#         print(myKnn(example_train_x, example_train_x[i], 1))
+# =============================================================================
 
 
     #v = np.array([[1,2],[3,4]])
@@ -29,7 +55,6 @@ def main():
     #print(ans)
     #print(ans)
     #normOfVectorAndMatrix()
-    #print(fuckMe(example_train_x, example_train_y,1))
  
 def myKnn(X,x,k) :
     #dist = []
@@ -66,7 +91,7 @@ def test():
     dist = np.sqrt(dist)
     print(dist)
 
-def fuckMe(x,y,k):
+def anothertest(x,y,k):
     dist = [] 
     #Computing Euclidean distance
     dist_ind = np.sqrt(np.sum((x-y)**2, axis=1)) 
