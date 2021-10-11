@@ -226,8 +226,8 @@ def cross_validation(train_X, train_y, num_folds=4, k=1):
         knnClasses = []
         for x in test:
             knnClasses.append(knn_classify_point(train, classes, x, k))
-        results.append(compute_accuracy(testClasses, knnClasses))
-    return sum(results)/len(results)
+        results.append(compute_accuracy(testClasses.T[0], knnClasses))
+    return sum(results)/len(results), np.var(results)
 # =============================================================================
 #     return avg_val_acc, varr_val_acc
 # =============================================================================
