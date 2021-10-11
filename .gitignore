@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/PythonApplication1/train_no_countries_no_marriage.csv
+/PythonApplication1/train_no_countries.csv
+/PythonApplication1/train_justbasic_and_occupation.csv
+/PythonApplication1/train_justbasic.csv
+/PythonApplication1/results

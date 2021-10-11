@@ -76,31 +76,39 @@ def main():
     # Load training and test data as numpy matrices 
     train_X, train_y, test_X = load_data()
     
-    #def cross_validation(train_X, train_y, num_folds=4, k=1):
-    crossValidation = cross_validation(train_X, train_y)
-    print("Testing Cross Validation...Complete")
     #######################################
     # Q9 Hyperparmeter Search
     #######################################
 
     # Search over possible settings of k
     print("Performing 4-fold cross validation")
-    for k in [1,3,5,7,9,99,999,8000]:
+    basicCols = list(range(4))
+    workClassCols = list(range(4,11))
+    maritalCols = list(range(11,18))
+    occupationCols = list(range(18,32))
+    relashonshipCols = list(range(32,38))
+    raceCols = list(range(38,43))
+    countryCols = list(range(43, 83))
+    allTrainingCols = [basicCols, workClassCols,maritalCols,occupationCols,relashonshipCols,raceCols,countryCols]
+    allSubsetsOfAllTrainigCols = [[allTrainingCols[j] for j in range(len(allTrainingCols)) if i >> j & 1] for i in range(2 ** len(allTrainingCols))]
+    for k in [99]:
       t0 = time.time()
 
       #######################################
       # TODO Compute train accuracy using whole set
       #######################################
-      
-      knn_classify_point(train_X, train_y, train_X[0], k)
+      train_acc = 0 
       #######################################
       # TODO Compute 4-fold cross validation accuracy
-      #######################################
-      #cross_validation(train_X, train_y)
-      val_acc, val_acc_var = 0,0
-      
-      t1 = time.time()
-      print("k = {:5d} -- train acc = {:.2f}%  val acc = {:.2f}% ({:.4f})\t\t[exe_time = {:.2f}]".format(k, train_acc*100, val_acc*100, val_acc_var*100, t1-t0))
+      ######################################
+      for subset in allSubsetsOfAllTrainigCols:
+            t0 = time.time()
+            if(len(subset) != 0):
+                print("Training cols: ", subset)
+                trainingSubset = train_X[:, np.concatenate(subset)]
+                val_acc, val_acc_var = cross_validation(trainingSubset, train_y, 4, k)
+                t1 = time.time()
+                print("k = {:5d} -- train acc = {:.2f}%  val acc = {:.2f}% ({:.4f})\t\t[exe_time = {:.2f}]".format(k, train_acc*100, val_acc*100, val_acc_var*100, t1-t0))
     
     #######################################
 
@@ -291,7 +299,7 @@ def predict_with_weights(examples_X, examples_y, queries_X, k):
 # Load data
 def load_data():
     traindata = np.genfromtxt('train.csv', delimiter=',')[1:, 1:]
-    train_X = traindata[:, :-1]
+    train_X = traindata[:, :-1] 
     train_y = traindata[:, -1]
     train_y = train_y[:,np.newaxis]
     
