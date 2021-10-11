@@ -26,12 +26,13 @@ def main():
     nn_idx = get_nearest_neighbors(example_train_x, np.array( [ 1, 4, 2] ), 2)
     assert(set(nn_idx).difference(set([4,3]))==set())
 
+    rankAndDist = get_nearest_neighbors_with_dist(example_train_x, np.array( [ 1, 4, 2] ), 2)
+
     nn_idx = get_nearest_neighbors(example_train_x, np.array( [ 1, -4, 2] ), 3)
     assert(set(nn_idx).difference(set([1,0,2]))==set())
 
     nn_idx = get_nearest_neighbors(example_train_x, np.array( [ 10, 40, 20] ), 5)
     assert(set(nn_idx).difference(set([4, 3, 0, 2, 1]))==set())
-
     print("Sanity Check 2...Complete")
     #########
     # Sanity Check 3: Neighbors for increasing k should be subsets
@@ -61,6 +62,12 @@ def main():
     assert( compute_accuracy(true_y, pred_y) == 4/6)
 
     print("Testing code accuracy...Complete")
+    
+    queries = np.array( [[ 10, 40, 20], [-2, 0, 5], [0,0,0]] )
+    pred = predict_with_weights(example_train_x, example_train_y, queries, 3)
+    assert( np.all(pred == np.array([[0],[1],[0]])))
+    
+    print("Testing weighted knn...Complete")
 
     #######################################
     # Now on to the real data!
@@ -143,6 +150,11 @@ def get_nearest_neighbors(X, y, k):
     lengths = np.linalg.norm(X-y, axis=1)
     return np.argsort(lengths)[0:k]
 
+def get_nearest_neighbors_with_dist(X, y, k):
+    lengths = np.linalg.norm(X-y, axis=1)
+    indexesAndDistance = np.vstack((np.argsort(lengths)[0:k], lengths[0:k]))
+    return indexesAndDistance
+
 ######################################################################
 # Q7 knn_classify_point 
 ######################################################################
@@ -164,14 +176,18 @@ def get_nearest_neighbors(X, y, k):
 ######################################################################
 
 def knn_classify_point(examples_X, examples_y, query, k):
-
     neighbors = get_nearest_neighbors(examples_X, query, k) #indexes of knn
     neighborClasses = []
     for neighbor in neighbors:
         neighborClasses.append(examples_y[neighbor][0])
     return np.bincount(neighborClasses).argmax()
 
-
+def knn_weighted_classification(examples_X, examples_y, query, k):
+    neighbors = get_nearest_neighbors_with_dist(examples_X, query, k) #indexes of knn
+    neighborClasses = []
+    for neighbor in neighbors[0]:
+        neighborClasses.append(examples_y[int(neighbor)][0])
+    return np.bincount(neighborClasses).argmax()
 
 
 ######################################################################
@@ -191,7 +207,7 @@ def knn_classify_point(examples_X, examples_y, query, k):
 ######################################################################
 
 def cross_validation(train_X, train_y, num_folds=4, k=1):
-    splits = np.split(train_X, num_folds) 
+    splits = np.split(train_X, num_folds) #creates n matrices each with numrows = rows/n
     classSplits = np.split(train_y, num_folds)
     results = []
     for i in range(num_folds):
@@ -211,7 +227,7 @@ def cross_validation(train_X, train_y, num_folds=4, k=1):
         for x in test:
             knnClasses.append(knn_classify_point(train, classes, x, k))
         results.append(compute_accuracy(testClasses, knnClasses))
-    return sum(results)/len(results),0
+    return sum(results)/len(results)
 # =============================================================================
 #     return avg_val_acc, varr_val_acc
 # =============================================================================
@@ -264,7 +280,12 @@ def compute_accuracy(true_y, predicted_y):
 def predict(examples_X, examples_y, queries_X, k): 
     # For each query, run a knn classifier
     predicted_y = [knn_classify_point(examples_X, examples_y, query, k) for query in queries_X]
+    
+    return np.array(predicted_y,dtype=np.int)[:,np.newaxis]
 
+def predict_with_weights(examples_X, examples_y, queries_X, k): 
+    # For each query, run a knn classifier
+    predicted_y = [knn_weighted_classification(examples_X, examples_y, query, k) for query in queries_X]
     return np.array(predicted_y,dtype=np.int)[:,np.newaxis]
 
 # Load data
