@@ -5,7 +5,7 @@
     <ProjectGuid>a34788f3-a84d-4187-b23e-6d121ffcb337</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>knn.py</StartupFile>
+    <StartupFile>HW1\knn.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,8 +22,19 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="knn.py" />
-    <Compile Include="scratch.py" />
+    <Compile Include="HW1\knn.py" />
+    <Compile Include="HW1\scratch.py" />
+    <Compile Include="HW1\knn2.py" />
+    <Compile Include="HW2\logreg_hw2.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="HW1\" />
+    <Folder Include="HW2\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="HW1\train.csv" />
+    <Content Include="HW2\test_cancer_pub.csv" />
+    <Content Include="HW2\train_cancer.csv" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

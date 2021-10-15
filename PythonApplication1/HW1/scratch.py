@@ -1,6 +1,16 @@
 import numpy as np
 
-def main():
+def main():    
+    randArray = np.random.randint(10, size=[4,4])
+    randVector = np.random.randint(10, size=[4])
+    columnWeights = np.ones(len(randArray[0]))
+    columnWeights[0] = 10
+    columnWeights[3] = .1
+    weightedArray = randArray * columnWeights
+    weightedVector = randVector * columnWeights
+    print(weightedArray)
+    
+def vStack():
     numfolds = 4
     randArray = np.random.randint(10, size=[8,8])
     splits = np.split(randArray, numfolds) 
