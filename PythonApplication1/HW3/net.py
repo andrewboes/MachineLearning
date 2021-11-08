@@ -13,8 +13,8 @@ matplotlib.rc('font', **font)
 
 
 # GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
-np.random.seed(102)
-step_size = 0.01
+np.random.seed(17)
+step_size = .1
 batch_size = 200
 max_epochs = 200
 
@@ -28,7 +28,6 @@ def main():
   # Load data and display an example
   X_train, Y_train, X_val, Y_val, X_test = loadData()
   displayExample(X_train[np.random.randint(0,len(X_train))])
-
 
   # Build a network with input feature dimensions, output feature dimension,
   # hidden dimension, and number of layers as specified below
@@ -116,6 +115,11 @@ def main():
   ax1.legend(loc="center")
   ax2.legend(loc="center right")
   plt.show()
+  #take first ten of the test set, display them and predict them
+  for i, x in enumerate(X_test[:100]):
+    logits = net.forward(x)
+    np.argmax(logits,axis=1)[:,np.newaxis]
+    displayExample(x, np.argmax(logits,axis=1)[0], i)
 
 
   ################################
@@ -165,9 +169,12 @@ class LinearLayer:
  # (np.matrix(axis=1).sum() returns an vector, [[3],[7]]
  #################################################
   def backward(self , grad): # grad is dL/dZ. grad is a (200,10) float array
-     self.grad_weights = (self.input.T @ grad) # Compute dL/dW as in Eq. 32 self.input = 200, 16 so grad_weights is now a 16,10 array
-     self.grad_bias = grad.sum()# Compute dL/db as in Eq. 27 grad is 200,10 so grad_bias will be 200,1
-     return (grad @ self.weights.T) # Compute dL/dX as in Eq. 35, self.weights is 16,10 and dL/dZ is (200,10) => dL/dZ @ W.T will be 200,16
+     # Compute dL/dW as in Eq. 32 self.input = 200, 16 so grad_weights is now a 16,10 array
+     self.grad_weights = (self.input.T @ grad) 
+     # Compute dL/db as in Eq. 27 grad_bias will be float
+     self.grad_bias = grad.sum()
+     # Compute dL/dX as in Eq. 35, self.weights is 16,10 and dL/dZ is (200,10) => dL/dZ @ W.T will be 200,16
+     return (grad @ self.weights.T) 
      
     
   def step(self, step_size):
@@ -328,8 +335,10 @@ def loadData(normalize = True):
   return X_train, Y_train, X_val, Y_val, X_test
 
 
-def displayExample(x):
+def displayExample(x, guess=-1, index = -1):
   plt.imshow(x.reshape(28,28),cmap="gray")
+  if guess != -1:
+      plt.title("{}, {}".format(index, guess))
   plt.show()
 
 
