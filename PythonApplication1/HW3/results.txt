@@ -1,0 +1,258 @@
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(102)
+step_size = .01
+batch_size = 200
+max_epochs = 2000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-06 21:16:49 INFO     [Epoch 1999]   Loss:    0.1735     Train Acc:      95.8%      Val Acc:      92.4%
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(102)
+step_size = .1
+batch_size = 200
+max_epochs = 4000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+
+2021-11-08 16:11:05 INFO     [Epoch 3999]   Loss:  0.005469     Train Acc:     100.0%      Val Acc:      92.2%
+Wrong: 86, 
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .1
+batch_size = 200
+max_epochs = 4000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+
+
+2021-11-08 16:20:50 INFO     [Epoch 3999]   Loss:  0.005059     Train Acc:     100.0%      Val Acc:      91.5%
+Wrong: 86
+
+ DESCENT
+np.random.seed(82)
+step_size = .05
+batch_size = 200
+max_epochs = 4000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+Wrong: 86, 74, 71, 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .05
+batch_size = 200
+max_epochs = 4000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 5
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+Wrong: 86, 74, 71, 62, 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 32  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-08 16:55:47 INFO     [Epoch 999]   Loss:  0.007402     Train Acc:     100.0%      Val Acc:      93.9%
+Wrong: 86,74,62,55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .001
+batch_size = 200
+max_epochs = 20000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+Wrong: 78,71,55
+86 was right!
+
+np.random.seed(82)
+step_size = .001
+batch_size = 200
+max_epochs = 40000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 16  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-08 17:58:09 INFO     [Epoch 39999]   Loss:    0.1014     Train Acc:     97.92%      Val Acc:      92.0%
+Wrong: 86,78,71,55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(13)
+step_size = .1
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 16:56:20 INFO     [Epoch 998]   Loss:   0.02251     Train Acc:     99.98%      Val Acc:      93.4%
+2021-11-09 16:56:21 INFO     [Epoch 999]   Loss:   0.02265     Train Acc:      99.9%      Val Acc:      93.0%
+Wrong: None
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(13)
+step_size = .1
+batch_size = 1000
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 18:29:48 INFO     [Epoch 998]   Loss:    0.1681     Train Acc:      95.6%      Val Acc:      91.6%
+2021-11-09 18:29:48 INFO     [Epoch 999]   Loss:    0.1681     Train Acc:     95.66%      Val Acc:      91.8%
+Wrong, not sure
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(13)
+step_size = .1
+batch_size = 1000
+max_epochs = 4000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 19:08:08 INFO     [Epoch 3998]   Loss:   0.03607     Train Acc:     99.62%      Val Acc:      92.8%
+2021-11-09 19:08:09 INFO     [Epoch 3999]   Loss:   0.03606     Train Acc:     99.58%      Val Acc:      92.9%
+2021-11-09 19:08:10 INFO     #wrong 4
+Wrong: 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 20:35:52 INFO     [Epoch 999]   Loss:  0.005034     Train Acc:     100.0%      Val Acc:      94.3%
+2021-11-09 20:35:53 INFO     #wrong 0
+wrong: none
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 2000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 21:03:14 INFO     [Epoch 999]   Loss:  0.005759     Train Acc:     100.0%      Val Acc:      93.2%
+2021-11-09 21:03:16 INFO     #wrong 0
+Wrong: 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(13)
+step_size = .01
+batch_size = 1000
+max_epochs = 20000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 21:15:41 INFO     [Epoch 19999]   Loss:    0.1021     Train Acc:     97.92%      Val Acc:      92.1%
+2021-11-09 21:15:43 INFO     #wrong 26
+Wrong: 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 1000
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 21:47:53 INFO     [Epoch 999]   Loss:    0.1012     Train Acc:     97.82%      Val Acc:      92.7%
+2021-11-09 21:47:55 INFO     #wrong 26
+Wrong: 55
+
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 22:12:48 INFO     [Epoch 999]   Loss:  0.005034     Train Acc:     100.0%      Val Acc:      94.3%
+2021-11-09 22:12:50 INFO     #wrong 0
+Wrong: 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 400
+max_epochs = 2000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 22:24:18 INFO     [Epoch 1999]   Loss:  0.004785     Train Acc:     100.0%      Val Acc:      94.3%
+2021-11-09 22:24:20 INFO     #wrong 0
+wrong: 55
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .4
+batch_size = 400
+max_epochs = 2000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 1000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 22:24:52 INFO     [Epoch 1999]   Loss:  0.001665     Train Acc:     100.0%      Val Acc:      95.1%
+2021-11-09 22:24:53 INFO     #wrong 0
+wrong: 55, 62, 74
+
+# GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
+np.random.seed(82)
+step_size = .2
+batch_size = 200
+max_epochs = 1000
+
+# GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
+number_of_layers = 2
+width_of_layers = 2000  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid" 
+2021-11-09 22:27:53 INFO     [Epoch 999]   Loss:  0.005759     Train Acc:     100.0%      Val Acc:      93.2%
+2021-11-09 22:27:54 INFO     #wrong 0
+wrong: 55, 74, 86

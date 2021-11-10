@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Oct 28 11:06:57 2021
+
+@author: BoesAn
+"""
+
 import numpy as np
 import time
 np.random.seed(42)
@@ -15,57 +22,56 @@ def main():
 
   logging.info("Running logistic regression w/ step size: {}, max iters: {}".format(step_size, max_iters))  
   # Load the training data
-  
   logging.info("Loading data")
   X_train, y_train, X_test = loadData()
  
-  logging.info("\n---------------------------------------------------------------------------\n")
-
-  # Fit a logistic regression model on train and plot its losses
-  logging.info("Training logistic regression model (No Bias Term)")
-  t0 = time.time()
-  w, losses = trainLogistic(X_train,y_train)
-  logging.info("exe time {}".format(time.time()-t0))
-  y_pred_train = X_train @ w >= 0
-  
-  logging.info("Learned weight vector: {}".format([np.round(a,4)[0] for a in w]))
-  logging.info("Train accuracy: {:.4}%".format(np.mean(y_pred_train == y_train) * 100))
-  
-  logging.info("\n---------------------------------------------------------------------------\n")
-
   X_train_bias = dummyAugment(X_train)
- 
-  # Fit a logistic regression model on train and plot its losses
-  logging.info("Training logistic regression model (Added Bias Term)")
-
-  w, bias_losses = trainLogistic(X_train_bias,y_train)
-  y_pred_train = X_train_bias @ w >= 0
-  
-  logging.info("Learned weight vector: {}".format([np.round(a,4)[0] for a in w]))
-  logging.info("Train accuracy: {:.4}%".format(np.mean(y_pred_train == y_train) * 100))
-
-
-  plt.figure(figsize=(16,9))
-  plt.plot(range(len(losses)), losses, label="No Bias Term Added")
-  plt.plot(range(len(bias_losses)), bias_losses, label="Bias Term Added")
-  plt.title("Logistic Regression Training Curve")
-  plt.xlabel("Epoch")
-  plt.ylabel("Negative Log Likelihood")
-  plt.legend()
-  plt.show()
-
   logging.info("\n---------------------------------------------------------------------------\n")
 
+# =============================================================================
+#   # Fit a logistic regression model on train and plot its losses
+#   logging.info("Training logistic regression model (No Bias Term)")
+#   t0 = time.time()
+#   w, losses = trainLogistic(X_train,y_train)
+#   logging.info("exe time {}".format(time.time()-t0))
+#   y_pred_train = X_train @ w >= 0
+#   
+#   logging.info("Learned weight vector: {}".format([np.round(a,4)[0] for a in w]))
+#   logging.info("Train accuracy: {:.4}%".format(np.mean(y_pred_train == y_train) * 100))
+#   
+#   logging.info("\n---------------------------------------------------------------------------\n")
+# 
+#  
+#   # Fit a logistic regression model on train and plot its losses
+#   logging.info("Training logistic regression model (Added Bias Term)")
+# 
+#   w, bias_losses = trainLogistic(X_train_bias,y_train)
+#   y_pred_train = X_train_bias @ w >= 0
+#   
+#   logging.info("Learned weight vector: {}".format([np.round(a,4)[0] for a in w]))
+#   logging.info("Train accuracy: {:.4}%".format(np.mean(y_pred_train == y_train) * 100))
+# 
+# 
+#   plt.figure(figsize=(16,9))
+#   plt.plot(range(len(losses)), losses, label="No Bias Term Added")
+#   plt.plot(range(len(bias_losses)), bias_losses, label="Bias Term Added")
+#   plt.title("Logistic Regression Training Curve")
+#   plt.xlabel("Epoch")
+#   plt.ylabel("Negative Log Likelihood")
+#   plt.legend()
+#   plt.show()
+# 
+#   logging.info("\n---------------------------------------------------------------------------\n")
+# 
+# =============================================================================
   logging.info("Running cross-fold vclidation for bias case:")
 
-# =============================================================================
-#   # Perform k-fold cross
-#   for k in [2,3,4, 5, 10]:
-#       for s in [.1, .01, .001, .0001]:
-#           for m in [100, 1000, 5000, 10000, 20000]:
-#               cv_acc, cv_std = kFoldCrossVal(X_train_bias, y_train, k,s,m)
-#               logging.info("{}-fold Cross Val Accuracy (s={}, m={}) -- Mean (stdev): {:.4}% ({:.4}%)".format(k,s,m,cv_acc * 100, cv_std * 100))
-# =============================================================================
+  # Perform k-fold cross
+  for k in [2,3,4, 5, 10]:
+     #w = [0.43463937, 0.09842774, 0.3646923, 0.37318118, 0, 0.33230682, 0.2072864, 0]
+     w = [-9.2681, 0.5374, -0.0413, 0.5004, 0, 0.0219, 0.4403, 0.2525, 0]
+     cv_acc, cv_std = kFoldCrossVal(X_train_bias, y_train, k,w)
+     logging.info("{}-fold Cross Val Accuracy (s={}, m={}) -- Mean (stdev): {:.4}% ({:.4}%)".format(k,1,1,cv_acc * 100, cv_std * 100))
 
   ####################################################
   # Write the code to make your test submission here
@@ -73,9 +79,7 @@ def main():
 
   #raise Exception('Student error: You haven\'t implemented the code in main() to make test predictions.')
 
-# =============================================================================
-#   kaggleOutput(X_test)
-# =============================================================================
+  kaggleOutput(X_test)
   
 
 
@@ -203,7 +207,16 @@ def dummyAugment(X):
 
 def kaggleOutput(X_test):
     X_test = dummyAugment(X_test)
-    w = [-9.2681, 0.5374, -0.0413, 0.5004, 0.585, 0.0219, 0.4403, 0.2525, 0.5046]
+# =============================================================================
+#     w = [-9.2681, 0.5374, -0.0413, 0.5004, 0.585, 0.0219, 0.4403, 0.2525, 0.5046]
+# =============================================================================
+# =============================================================================
+#     w = [-9.2681, 0.5374, -0.0413, 0.5004, 0, 0.0219, 0.4403, 0.2525, 0]
+# =============================================================================
+# =============================================================================
+#     w = [0.43463937, 0.09842774, 0.3646923, 0.37318118, 0, 0.33230682, 0.2072864, 0, 0.5046]
+# =============================================================================
+    w = [-10.5847, 0.6384, -0.111, 0.562, 0.6698, 0.0487, 0.5016, 0.2672, 0.6799]
     predictedY = X_test @ w >= 0
     test_out = np.column_stack((np.expand_dims(np.array(range(233),dtype=np.int), axis=1), predictedY.T))
     header = np.array([["id", "type"]])
@@ -217,7 +230,7 @@ def kaggleOutput(X_test):
 ##################################################################
 
 # Given a matrix X (n x d) and y (n x 1), perform k fold cross val.
-def kFoldCrossVal(X, y, k,s,m):
+def kFoldCrossVal(X, y, k, w):
   fold_size = int(np.ceil(len(X) / k))
   
   rand_inds = np.random.permutation(len(X))
@@ -238,10 +251,9 @@ def kFoldCrossVal(X, y, k,s,m):
     X_fold_test = X[test_idx]
     y_fold_test = y[test_idx]
     
-    X_fold_train = X[train_idx]
-    y_fold_train = y[train_idx]
+  
 
-    w, losses = trainLogistic(X_fold_train, y_fold_train,m,s)
+    #w, losses = trainLogistic(X_fold_train, y_fold_train,m,s)
 
     acc.append(np.mean((X_fold_test @ w >= 0) == y_fold_test))
 

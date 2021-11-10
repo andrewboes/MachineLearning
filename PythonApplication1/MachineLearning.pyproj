@@ -5,7 +5,7 @@
     <ProjectGuid>a34788f3-a84d-4187-b23e-6d121ffcb337</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>HW1\knn.py</StartupFile>
+    <StartupFile>HW3\net.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -26,15 +26,20 @@
     <Compile Include="HW1\scratch.py" />
     <Compile Include="HW1\knn2.py" />
     <Compile Include="HW2\logreg_hw2.py" />
+    <Compile Include="HW3\net.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="HW1\" />
     <Folder Include="HW2\" />
+    <Folder Include="HW3\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="HW1\train.csv" />
     <Content Include="HW2\test_cancer_pub.csv" />
     <Content Include="HW2\train_cancer.csv" />
+    <Content Include="HW3\mnist_small_test.csv" />
+    <Content Include="HW3\mnist_small_train.csv" />
+    <Content Include="HW3\mnist_small_val.csv" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

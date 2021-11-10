@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 27 20:37:43 2021
+
+@author: BoesAn
+"""
+
 import numpy as np
 import time
 np.random.seed(42)
@@ -8,8 +15,8 @@ logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
 
 # GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
-step_size = .000001
-max_iters = 10000000    
+step_size = .00001
+max_iters = 1000000    
 
 def main():
 
@@ -75,8 +82,8 @@ def main():
 
 # =============================================================================
 #   kaggleOutput(X_test)
+#   
 # =============================================================================
-  
 
 
 

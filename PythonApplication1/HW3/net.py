@@ -13,14 +13,14 @@ matplotlib.rc('font', **font)
 
 
 # GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
-np.random.seed(17)
-step_size = .1
-batch_size = 200
-max_epochs = 200
+np.random.seed(82)
+step_size = .4
+batch_size = 400
+max_epochs = 2000
 
 # GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
 number_of_layers = 2
-width_of_layers = 16  # only matters if number of layers > 1
+width_of_layers = 1000  # only matters if number of layers > 1
 activation = "ReLU" if False else "Sigmoid" 
 
 def main():
@@ -115,17 +115,42 @@ def main():
   ax1.legend(loc="center")
   ax2.legend(loc="center right")
   plt.show()
-  #take first ten of the test set, display them and predict them
-  for i, x in enumerate(X_test[:100]):
-    logits = net.forward(x)
-    np.argmax(logits,axis=1)[:,np.newaxis]
-    displayExample(x, np.argmax(logits,axis=1)[0], i)
-
+  
+  problemChildren = [94,86,78,74,71,65,62,55]
+  
+  #take first 100 of the test set, display them and predict them
+  #for i, x in enumerate(X_test[:100]):
+  for i in problemChildren:
+    testValue = X_test[i]
+    logits = net.forward(testValue)
+    displayExample(testValue, "{}, {}".format(i, np.argmax(logits,axis=1)[0]))
+# =============================================================================
+#   for i,x in enumerate(X_train[:100]):
+#     trainClass = Y_train[i]
+#     logits = net.forward(x)
+#     displayExample(x, "{}, p={}, a={}".format(i, np.argmax(logits,axis=1)[0], trainClass))
+# =============================================================================
+  logits = net.forward(X_train[:1000])
+  countWrong = 0
+  for i,x in enumerate(X_train[:1000]):
+    actualClass = Y_train[i]
+    indiv = logits[i]
+    predictedClass = np.argmax(indiv)
+    if actualClass != predictedClass:
+      displayExample(x, "{}, p={}, a={}".format(i, predictedClass, actualClass))
+      countWrong += 1
+  logging.info("#wrong {}".format(countWrong))
+        
 
   ################################
   # Q7 Evaluate on Test
   ################################
-  raise Exception('Student error: You haven\'t implemented evaluating the test set yet.')
+  logits = net.forward(X_test)
+  predictedY = np.argmax(logits,axis=1)[:,np.newaxis]
+  test_out = np.column_stack((np.expand_dims(np.array(range(len(predictedY)),dtype=np.int), axis=1), predictedY))
+  header = np.array([["id", "type"]])
+  test_out = np.concatenate((header, test_out))
+  np.savetxt('test_predicted.csv', test_out, fmt='%s', delimiter=',')
 
 
 
@@ -335,10 +360,10 @@ def loadData(normalize = True):
   return X_train, Y_train, X_val, Y_val, X_test
 
 
-def displayExample(x, guess=-1, index = -1):
+def displayExample(x, title=""):
   plt.imshow(x.reshape(28,28),cmap="gray")
-  if guess != -1:
-      plt.title("{}, {}".format(index, guess))
+  if title != "":
+      plt.title(title)
   plt.show()
 
 
