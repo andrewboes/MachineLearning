@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 
+from datetime import datetime
 import matplotlib.pyplot as plt
 import logging
 logging.basicConfig(
@@ -11,22 +13,23 @@ font = {'weight' : 'normal',
         'size'   : 22}
 matplotlib.rc('font', **font)
 
-
+randomSeed = 82
 # GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
-np.random.seed(82)
-step_size = .4
-batch_size = 400
-max_epochs = 2000
+np.random.seed(randomSeed)
+step_size = .3
+batch_size = 200
+max_epochs = 164
 
 # GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
 number_of_layers = 2
-width_of_layers = 1000  # only matters if number of layers > 1
+width_of_layers = 30  # only matters if number of layers > 1
 activation = "ReLU" if False else "Sigmoid" 
 
 def main():
-
+  bestRunPercent = -1
+  bestRunEpoch = -1
   # Load data and display an example
-  X_train, Y_train, X_val, Y_val, X_test = loadData()
+  X_train, Y_train,X_val, Y_val, X_test = loadData()
   displayExample(X_train[np.random.randint(0,len(X_train))])
 
   # Build a network with input feature dimensions, output feature dimension,
@@ -86,7 +89,9 @@ def main():
     vloss, vacc = evaluateValidation(net, X_val, Y_val, batch_size)
     val_losses.append(vloss)
     val_accs.append(vacc)
-    
+    if vacc > bestRunPercent:
+        bestRunPercent = vacc
+        bestRunEpoch = i
     # Print out the average stats over this epoch
     logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,loss_running/len(X_train), acc_running / len(X_train)*100,vacc*100))
 
@@ -130,9 +135,9 @@ def main():
 #     logits = net.forward(x)
 #     displayExample(x, "{}, p={}, a={}".format(i, np.argmax(logits,axis=1)[0], trainClass))
 # =============================================================================
-  logits = net.forward(X_train[:1000])
+  logits = net.forward(X_train[:100])
   countWrong = 0
-  for i,x in enumerate(X_train[:1000]):
+  for i,x in enumerate(X_train[:100]):
     actualClass = Y_train[i]
     indiv = logits[i]
     predictedClass = np.argmax(indiv)
@@ -145,12 +150,25 @@ def main():
   ################################
   # Q7 Evaluate on Test
   ################################
-  logits = net.forward(X_test)
-  predictedY = np.argmax(logits,axis=1)[:,np.newaxis]
-  test_out = np.column_stack((np.expand_dims(np.array(range(len(predictedY)),dtype=np.int), axis=1), predictedY))
-  header = np.array([["id", "type"]])
-  test_out = np.concatenate((header, test_out))
-  np.savetxt('test_predicted.csv', test_out, fmt='%s', delimiter=',')
+  file = open("runKeys.txt", "a")
+  runTimeKey = str(datetime.now().strftime("%Y%b%dT%H:%M:%S"))
+  file.writelines("{},{},{},{},{},{},{},{},{},{}\n".format(runTimeKey,randomSeed,step_size,batch_size,max_epochs,number_of_layers,width_of_layers,activation,bestRunEpoch,bestRunPercent*100))
+  file.close()  
+  #save run info only if it's 'good'
+  if bestRunPercent > .939:
+      logits = net.forward(X_test)
+      predictedY = np.argmax(logits,axis=1)[:,np.newaxis]
+      file_path = 'predictions.csv'
+      try:
+        fp = open(file_path)
+      except IOError:
+        # If not exists, create the file
+        indexes = (np.expand_dims(np.array(range(len(predictedY)),dtype=np.int), axis=1))
+        header = np.array([["id"]])
+        np.savetxt(file_path, np.concatenate((header, indexes)),fmt='%s', delimiter=',')
+      csv_input = pd.read_csv(file_path)
+      csv_input[runTimeKey] = predictedY
+      csv_input.to_csv(file_path, index=False)
 
 
 
