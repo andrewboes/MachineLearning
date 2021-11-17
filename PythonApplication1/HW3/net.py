@@ -13,23 +13,30 @@ font = {'weight' : 'normal',
         'size'   : 22}
 matplotlib.rc('font', **font)
 
-randomSeed = 82
+randomSeed = 1005
 # GLOBAL PARAMETERS FOR STOCHASTIC GRADIENT DESCENT
-np.random.seed(randomSeed)
-step_size = .3
-batch_size = 200
-max_epochs = 164
+
+step_size = .4
+batch_size = 1200
+max_epochs = 305
 
 # GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
-number_of_layers = 2
-width_of_layers = 30  # only matters if number of layers > 1
-activation = "ReLU" if False else "Sigmoid" 
+number_of_layers = 3
+width_of_layers = 100  # only matters if number of layers > 1
+activation = "ReLU" if False else "Sigmoid"  
 
 def main():
+  X_train, Y_train,X_val, Y_val, X_test = loadData()
+  for x in [1,2,3,5,8,13,21,34,55,80,166,101, 103, 107, 109, 113, 127, 131, 137, 139, 149]:
+      main2(X_train, Y_train,X_val, Y_val, X_test, x)
+
+def main2(X_train, Y_train,X_val, Y_val, X_test, newSeed=randomSeed):
+  np.random.seed(newSeed)
   bestRunPercent = -1
   bestRunEpoch = -1
+  bestRunLoss = -1
+  bestLogits = []
   # Load data and display an example
-  X_train, Y_train,X_val, Y_val, X_test = loadData()
   displayExample(X_train[np.random.randint(0,len(X_train))])
 
   # Build a network with input feature dimensions, output feature dimension,
@@ -89,9 +96,11 @@ def main():
     vloss, vacc = evaluateValidation(net, X_val, Y_val, batch_size)
     val_losses.append(vloss)
     val_accs.append(vacc)
-    if vacc > bestRunPercent:
+    if i > 50 and vacc > bestRunPercent:
         bestRunPercent = vacc
         bestRunEpoch = i
+        bestRunLoss = loss_running/len(X_train)
+        bestLogits = net.forward(X_test)
     # Print out the average stats over this epoch
     logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,loss_running/len(X_train), acc_running / len(X_train)*100,vacc*100))
 
@@ -125,26 +134,30 @@ def main():
   
   #take first 100 of the test set, display them and predict them
   #for i, x in enumerate(X_test[:100]):
-  for i in problemChildren:
-    testValue = X_test[i]
-    logits = net.forward(testValue)
-    displayExample(testValue, "{}, {}".format(i, np.argmax(logits,axis=1)[0]))
+# =============================================================================
+#   for i in problemChildren:
+#     testValue = X_test[i]
+#     logits = net.forward(testValue)
+#     displayExample(testValue, "{}, {}".format(i, np.argmax(logits,axis=1)[0]))
+# =============================================================================
 # =============================================================================
 #   for i,x in enumerate(X_train[:100]):
 #     trainClass = Y_train[i]
 #     logits = net.forward(x)
 #     displayExample(x, "{}, p={}, a={}".format(i, np.argmax(logits,axis=1)[0], trainClass))
 # =============================================================================
-  logits = net.forward(X_train[:100])
-  countWrong = 0
-  for i,x in enumerate(X_train[:100]):
-    actualClass = Y_train[i]
-    indiv = logits[i]
-    predictedClass = np.argmax(indiv)
-    if actualClass != predictedClass:
-      displayExample(x, "{}, p={}, a={}".format(i, predictedClass, actualClass))
-      countWrong += 1
-  logging.info("#wrong {}".format(countWrong))
+# =============================================================================
+#   logits = net.forward(X_train[:100])
+#   countWrong = 0
+#   for i,x in enumerate(X_train[:100]):
+#     actualClass = Y_train[i]
+#     indiv = logits[i]
+#     predictedClass = np.argmax(indiv)
+#     if actualClass != predictedClass:
+#       displayExample(x, "{}, p={}, a={}".format(i, predictedClass, actualClass))
+#       countWrong += 1
+#   logging.info("#wrong {}".format(countWrong))
+# =============================================================================
         
 
   ################################
@@ -152,12 +165,21 @@ def main():
   ################################
   file = open("runKeys.txt", "a")
   runTimeKey = str(datetime.now().strftime("%Y%b%dT%H:%M:%S"))
-  file.writelines("{},{},{},{},{},{},{},{},{},{}\n".format(runTimeKey,randomSeed,step_size,batch_size,max_epochs,number_of_layers,width_of_layers,activation,bestRunEpoch,bestRunPercent*100))
+  file.writelines("{},{},{},{},{},{},{},{},{},{},{}\n".format(runTimeKey,randomSeed,step_size,batch_size,max_epochs,number_of_layers,width_of_layers,activation,bestRunEpoch,bestRunPercent*100,bestRunLoss))
   file.close()  
+  
+# =============================================================================
+#   logits = net.forward(X_test)
+#   predictedY = np.argmax(logits,axis=1)[:,np.newaxis]
+#   test_out = np.column_stack((np.expand_dims(np.array(range(len(predictedY)),dtype=np.int), axis=1), predictedY))
+#   header = np.array([["id", "type"]])
+#   test_out = np.concatenate((header, test_out))
+#   np.savetxt('test_predicted.csv', test_out, fmt='%s', delimiter=',')
+# =============================================================================
   #save run info only if it's 'good'
-  if bestRunPercent > .939:
-      logits = net.forward(X_test)
-      predictedY = np.argmax(logits,axis=1)[:,np.newaxis]
+  if bestRunPercent > .1:
+      #logits = net.forward(X_test)
+      predictedY = np.argmax(bestLogits,axis=1)[:,np.newaxis]
       file_path = 'predictions.csv'
       try:
         fp = open(file_path)
@@ -354,7 +376,7 @@ def evaluateValidation(model, X_val, Y_val, batch_size):
 # Utility Functions for Loading and Displaying Data
 #####################################################
 def loadData(normalize = True):
-  train = np.loadtxt("mnist_small_train.csv", delimiter=",", dtype=np.float64)
+  train = np.loadtxt("allJiggles.csv", delimiter=",", dtype=np.float64)
   val = np.loadtxt("mnist_small_val.csv", delimiter=",", dtype=np.float64)
   test = np.loadtxt("mnist_small_test.csv", delimiter=",", dtype=np.float64)
 
