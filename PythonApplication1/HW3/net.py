@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -21,13 +22,14 @@ batch_size = 1200
 max_epochs = 305
 
 # GLOBAL PARAMETERS FOR NETWORK ARCHITECTURE
-number_of_layers = 3
+number_of_layers = 6
 width_of_layers = 100  # only matters if number of layers > 1
 activation = "ReLU" if False else "Sigmoid"  
 
 def main():
   X_train, Y_train,X_val, Y_val, X_test = loadData()
-  for x in [1,2,3,5,8,13,21,34,55,80,166,101, 103, 107, 109, 113, 127, 131, 137, 139, 149]:
+  for x in [82]:
+  #for x in [1,2,3,5,8,13,21,34,55,80,166,101, 103, 107, 109, 113, 127, 131, 137, 139, 149]:
       main2(X_train, Y_train,X_val, Y_val, X_test, x)
 
 def main2(X_train, Y_train,X_val, Y_val, X_test, newSeed=randomSeed):
@@ -56,7 +58,7 @@ def main2(X_train, Y_train,X_val, Y_val, X_test, newSeed=randomSeed):
   # Indicies we will use to shuffle data randomly
   inds = np.arange(len(X_train))
   for i in range(max_epochs):
-    
+    dropout = i > 25
     # Shuffled indicies so we go through data in new random batches
     np.random.shuffle(inds)
 
@@ -64,14 +66,14 @@ def main2(X_train, Y_train,X_val, Y_val, X_test, newSeed=randomSeed):
     j = 0
     acc_running = loss_running = 0
     while j < len(X_train):
-
+      
       # Select the members of this random batch
       b = min(batch_size, len(X_train)-j)
       X_batch = X_train[inds[j:j+b]]
       Y_batch = Y_train[inds[j:j+b]].astype(np.int)
     
       # Compute the scores for our 10 classes using our model
-      logits = net.forward(X_batch)
+      logits = net.forward(X_batch, dropout=dropout)
       loss = lossFunc.forward(logits, Y_batch)
       acc = np.mean( np.argmax(logits,axis=1)[:,np.newaxis] == Y_batch)
       
@@ -79,10 +81,10 @@ def main2(X_train, Y_train,X_val, Y_val, X_test, newSeed=randomSeed):
       loss_grad = lossFunc.backward()
 
       # Pass gradient back through networks
-      net.backward(loss_grad)
+      net.backward(loss_grad, dropout=dropout)
 
       # Take a step of gradient descent
-      net.step(step_size)
+      net.step(step_size, dropout=dropout)
 
       #Record losses and accuracy then move to next batch
       losses.append(loss)
@@ -268,18 +270,35 @@ class FeedForwardNeuralNetwork:
         self.layers.append(Sigmoid() if activation=="Sigmoid" else ReLU())
       self.layers.append(LinearLayer(hidden_dim, output_dim))
 
-  def forward(self, X):
-    for layer in self.layers:
-      X = layer.forward(X)
+  def forward(self, X, dropout=False):
+    layersToExclude = (np.expand_dims(np.array(range(len(self.layers)),dtype=np.int), axis=1))
+    layersToExclude = layersToExclude[np.random.choice(len(layersToExclude), size=int(len(layersToExclude)/2), replace=False)]  
+    for i, layer in enumerate(self.layers):
+      if not dropout:
+          X = layer.forward(X)
+      elif not  np.any(layersToExclude[:, 0] == i):
+          X = layer.forward(X)
     return X
 
-  def backward(self, grad):
+  def backward(self, grad, dropout=False):
+    layersToExclude = (np.expand_dims(np.array(range(len(self.layers)),dtype=np.int), axis=1))
+    layersToExclude = layersToExclude[np.random.choice(len(layersToExclude), size=int(len(layersToExclude)/2), replace=False)]  
+    i = 0
     for layer in reversed(self.layers):
-      grad = layer.backward(grad)
+        if not dropout:
+          grad = layer.backward(grad)
+        elif not np.any(layersToExclude[:, 0] == i):
+          grad = layer.backward(grad)
+        i = i + 1
 
-  def step(self, step_size=0.001):
-    for layer in self.layers:
-      layer.step(step_size)
+  def step(self, step_size=0.001, dropout=False):
+    layersToExclude = (np.expand_dims(np.array(range(len(self.layers)),dtype=np.int), axis=1))
+    layersToExclude = layersToExclude[np.random.choice(len(layersToExclude), size=int(len(layersToExclude)/2), replace=False)]  
+    for i, layer in enumerate(self.layers):
+        if not dropout:
+           layer.step(step_size)
+        elif not np.any(layersToExclude[:, 0] == i):
+           layer.step(step_size)
 
 
 
