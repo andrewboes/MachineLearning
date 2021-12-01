@@ -25,22 +25,20 @@ clf = tree.DecisionTreeClassifier("entropy", random_state=0)
 clf = clf.fit(X_train, y_train) 
 single_acc = clf.score(X_test,y_test)
 
-
 # Train an ensemble with 20 models
 M = 15
 preds = np.zeros( (X_test.shape[0],M) )
 for m in range(M):
-
   ###################################################
   # MODIFY IN HERE TO DECREASE CORRELATION
   ###################################################
-
-  X_data = X_train
-  y_data = y_train
+  indexes = np.random.choice(X_train.shape[0], int(len(X_train)/M), replace=True)  
+  X_data = X_train[indexes, :]
+  y_data = y_train[indexes]
 
 
   #Fit the model and store it's predictions
-  clf = tree.DecisionTreeClassifier("entropy")
+  clf = tree.DecisionTreeClassifier("entropy", max_features=(1))
   clf = clf.fit(X_data, y_data)
   preds[:,m]= clf.predict(X_test)
 
