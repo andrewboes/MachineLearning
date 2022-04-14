@@ -59,12 +59,8 @@ class Variable:
     self.grad=1
     #For each child c of parent, add ∂y/∂parent ∗ ∂parent/∂c to c’s gradient.
     for n in nodes:
-      if(n.children):
-        try:
-          for c in n.children:
-            n.grad = np.multiply(n.func.backward(n, n.children),n.grad)
-        except:
-          print("funciton can't complete backwards: ", n.name)
+      if (len(n.children) > 0):
+          n.grad = np.multiply(n.func.backward(n, n.children),n.grad)      
       for i in range(len(n.children)):
           n.children[i].grad = n.children[i].grad + n.grad[i]
 
@@ -393,12 +389,10 @@ def backpropUnitTests():
   #d.drawGraph()
   #plt.show()
 
-# =============================================================================
-#   d.backward()
-#   print(x1.grad)
-#   print("first x1", x1.grad)
-#   assert(x1.grad == 1)
-# =============================================================================
+  d.backward()
+  print(x1.grad)
+  print("first x1", x1.grad)
+  assert(x1.grad == 1)
 
   
   # Unit Test 1 
