@@ -54,11 +54,14 @@ class LinearLayer:
 
   # Initialize our layer with (input_dim, output_dim) weight matrix and a (1,output_dim) bias vector
   def __init__(self, input_dim, output_dim):
-    raise Exception('Student error: You haven\'t implemented the init for LinearLayer yet.')
+    self.weights = np.ones((input_dim, output_dim))*.5 #np.random.randn(input_dim, output_dim)* np.sqrt(2. / input_dim)
+    self.bias =np.zeros((1,output_dim))#np.ones( (1,output_dim) )*0.5
+    
     
   # During the forward pass, we simply compute XW+b
   def forward(self, input):
-    raise Exception('Student error: You haven\'t implemented the forward pass for LinearLayer yet.')
+    self.input = input
+    return self.weights*input+self.bias
 
 
   # Inputs:
@@ -85,15 +88,19 @@ class LinearLayer:
   #               the i'th row is the gradient of the loss of example i with respect 
   #               to x_i (the input of this layer for example i) 
 
-  def backward(self, grad):
-    raise Exception('Student error: You haven\'t implemented the backward pass for LinearLayer yet.')
+  def backward(self, grad): # grad is dL/dZ.
+    #have dL/dZ, need dL/dX
+    self.grad_weights = (self.input.T @ grad) # Compute dL/dW
+    self.grad_bias = grad.sum() # Compute dL/db
+    return (grad @ self.weights.T)# Compute dL/dX
     
-
   ######################################################
   # Q5 Implement ADAM with Weight Decay
   ######################################################  
   def step(self, step_size):
-    raise Exception('Student error: You haven\'t implemented the step for LinearLayer yet.')
+    #TODO: implment weight decay
+    self.weights -= step_size*self.grad_weights
+    self.bias -= step_size*self.grad_bias
 
 
 
