@@ -61,7 +61,7 @@ class LinearLayer:
   # During the forward pass, we simply compute XW+b
   def forward(self, input):
     self.input = input
-    return self.weights*input+self.bias
+    return self.input@self.weights+self.bias
 
 
   # Inputs:
@@ -120,7 +120,7 @@ def main():
 
   # Set optimization parameters (NEED TO CHANGE THESE)
   batch_size = 1
-  max_epochs = 1
+  max_epochs = 10
   step_size = 1
 
   number_of_layers = 1
@@ -137,34 +137,42 @@ def main():
 
   # Build a network with input feature dimensions, output feature dimension,
   # hidden dimension, and number of layers as specified below. You can edit this as you please.
-  net = FeedForwardNeuralNetwork(input_dim,output_dim, width_of_layers, number_of_layers)
+  network = FeedForwardNeuralNetwork(input_dim,output_dim, width_of_layers, number_of_layers)
 
   # Some lists for book-keeping for plotting later
   losses = []
   val_losses = []
   accs = []
   val_accs = []
+  lossFunc = CrossEntropySoftmax()
+  acc_running = 0
+  loss_running = 0
   
-
-  raise Exception('Student error: You haven\'t implemented the training loop yet.')
-  
+  trainingIndexes = np.arange(len(X_train))
   # For each epoch below max epochs
-
-    # Scramble order of examples
-
+  for i in range(max_epochs):
+    np.random.shuffle(trainingIndexes) # Scramble order of examples
+    j=acc_running=loss_running=0                
     # for each batch in data:
-
+    while j < len(X_train):
       # Gather batch
-
-      # Compute forward pass
-
-      # Compute loss
-
-      # Backward loss and networks
-
-      # Take optimizer step
+      batchInstanceSize = min(batch_size, len(X_train)-j)
+      X_batch = X_train[trainingIndexes[j:j+batchInstanceSize]]
+      Y_batch = Y_train[trainingIndexes[j:j+batchInstanceSize]].astype(np.int)      
+      results = network.forward(X_batch) # Compute forward pass
+      accuracy = np.mean( np.argmax(results,axis=1)[:,np.newaxis] == Y_batch)      
+      loss = lossFunc.forward(results, Y_batch) # Compute loss
+      loss_grad = lossFunc.backward()
+      network.backward(loss_grad) # Backward loss and networks
+      network.step(step_size)# Take optimizer step
 
       # Book-keeping for loss / accuracy
+      losses.append(loss)
+      accs.append(acc)
+      loss_running += loss*b
+      acc_running += acc*b
+
+      j+=batch_size
   
     # Evaluate performance on validation.
 
