@@ -16,13 +16,17 @@ logging.basicConfig(
 ######################################################
 # Q4 Implement Init, Forward, and Backward For Layers
 ######################################################
-def old_softmax(x):
+def simple_softmax(x):
   eList = np.exp(x)
   return eList / np.sum(eList)
 
-def softmax(X):
+def softmaxDeepnotes(X):
   exps = np.exp(X - np.max(X))
   return exps / np.sum(exps)
+
+def softmax(x):
+  x -= np.max(x,axis=1)[:,np.newaxis]  # Numerical stability trick
+  return np.exp(x) / (np.sum(np.exp(x),axis=1)[:,np.newaxis])
 
 class CrossEntropySoftmax:
   
@@ -31,6 +35,8 @@ class CrossEntropySoftmax:
   # labels -- batch_size x 1 vector of integer label id (0,1,2) where labels[i] is the label for batch element i
   #
   # Output should be a positive scalar value equal to the average cross entropy loss after softmax
+  
+  
   def forward(self, logits, labels):
     self.labels = labels
     self.logitsSoftmax = softmax(logits)
@@ -146,12 +152,12 @@ def evaluate(model, X_val, Y_val, batch_size):
 def main():
 
   # Set optimization parameters (NEED TO CHANGE THESE)
-  batch_size = 1
-  max_epochs = 100
-  step_size = 1
+  batch_size = 5
+  max_epochs = 20
+  step_size = .2
 
-  number_of_layers = 1
-  width_of_layers = 1
+  number_of_layers = 2
+  width_of_layers = 5
 
 
   # Load data
@@ -189,6 +195,7 @@ def main():
       results = network.forward(X_batch) # Compute forward pass
       accuracy = np.mean( np.argmax(results,axis=1)[:,np.newaxis] == Y_batch)      
       loss = lossFunc.forward(results, Y_batch) # Compute loss
+      #print(loss)
       lossGrad = lossFunc.backward()
       network.backward(lossGrad) # Backward loss and networks
       network.step(step_size)# Take optimizer step
@@ -207,12 +214,14 @@ def main():
     ###############################################################
     # Print some stats about the optimization process after each epoch
     ###############################################################
-    # epoch_avg_loss -- average training loss across batches this epoch
-    # epoch_avg_acc -- average accuracy across batches this epoch
-    # vacc -- validation accuracy this epoch
-    ###############################################################
+    vloss, vacc = evaluate(network, X_val, Y_val, batch_size)
+    val_losses.append(vloss)
+    val_accs.append(vacc)
+    #epoch_avg_loss = loss_running/len(X_train)# -- average training loss across batches this epoch
+    #epoch_avg_acc = acc_running / len(X_train)*100 #-- average accuracy across batches this epoch
     
-    #logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,epoch_avg_loss, epoch_avg_acc, vacc*100))
+    
+    logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,loss_running/len(X_train), acc_running / len(X_train)*100,vacc*100))
 
     
   ###############################################################
@@ -317,7 +326,7 @@ def loadCIFAR10Data():
   logging.info("Loaded train: " + str(X_train.shape))
   logging.info("Loaded val: " + str(X_val.shape))
   logging.info("Loaded test: " + str(X_test.shape))
-  
+  X_train = (X_train/256)-0.5
   return X_train, Y_train, X_val, Y_val, X_test, Y_test
 
 
