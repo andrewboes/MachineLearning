@@ -16,7 +16,13 @@ logging.basicConfig(
 ######################################################
 # Q4 Implement Init, Forward, and Backward For Layers
 ######################################################
+def softmax(x):
+  eList = np.exp(x)
+  return eList / np.sum(eList)
 
+def stable_softmax(X):
+  exps = np.exp(X - np.max(X))
+  return exps / np.sum(exps)
 
 class CrossEntropySoftmax:
   
@@ -26,24 +32,33 @@ class CrossEntropySoftmax:
   #
   # Output should be a positive scalar value equal to the average cross entropy loss after softmax
   def forward(self, logits, labels):
-    raise Exception('Student error: You haven\'t implemented the forward pass for CrossEntropySoftmax yet.')
-
+    self.labels = labels
+    self.logitsSoftmax = softmax(logits)
+    logLikelihood = -np.log(self.logitsSoftmax[range(labels.shape[0]), labels])
+    return np.sum(logLikelihood)/labels.shape[0]
+    
 
   # Compute the gradient of the cross entropy loss with respect to the the input logits
   def backward(self):
-    raise Exception('Student error: You haven\'t implemented the backward pass for CrossEntropySoftmax yet.')
+    #m =self.labels.shape[0]
+    #grad = softmax(X)
+    self.logitsSoftmax[range(self.labels.shape[0]),self.labels] -= 1
+    self.logitsSoftmax = self.logitsSoftmax/self.labels.shape[0]
+    return self.logitsSoftmax
+    
 
 
 
 class ReLU:
 
-  # Compute ReLU(input) element-wise
+  # Forward pass is max(0,input)
   def forward(self, input):
-    raise Exception('Student error: You haven\'t implemented the forward pass for ReLU yet.')
-      
-  # Given dL/doutput, return dL/dinput
+    self.mask = (input > 0)
+    return input * self.mask
+  
+  # Backward pass masks out same elements
   def backward(self, grad):
-    raise Exception('Student error: You haven\'t implemented the backward pass for ReLU yet.')
+    return grad * self.mask
 
   # No parameters so nothing to do during a gradient descent step
   def step(self,step_size):
@@ -162,15 +177,15 @@ def main():
       results = network.forward(X_batch) # Compute forward pass
       accuracy = np.mean( np.argmax(results,axis=1)[:,np.newaxis] == Y_batch)      
       loss = lossFunc.forward(results, Y_batch) # Compute loss
-      loss_grad = lossFunc.backward()
-      network.backward(loss_grad) # Backward loss and networks
+      lossGrad = lossFunc.backward()
+      network.backward(lossGrad) # Backward loss and networks
       network.step(step_size)# Take optimizer step
 
       # Book-keeping for loss / accuracy
       losses.append(loss)
-      accs.append(acc)
-      loss_running += loss*b
-      acc_running += acc*b
+      accs.append(accuracy)
+      loss_running += loss*batchInstanceSize
+      acc_running += accuracy*batchInstanceSize
 
       j+=batch_size
   
@@ -225,7 +240,7 @@ def main():
   ################################
   # Q7 Tune and Evaluate on Test
   ################################
-  _, tacc = evaluate(net, X_test, Y_test, batch_size)
+  _, tacc = evaluate(network, X_test, Y_test, batch_size)
   print(tacc)
 
 
