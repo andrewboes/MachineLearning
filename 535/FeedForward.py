@@ -71,16 +71,15 @@ class ReLU:
 
 class LinearLayer:
 
-  # Initialize our layer with (input_dim, output_dim) weight matrix and a (1,output_dim) bias vector
+   # Initialize our layer with (input_dim, output_dim) weight matrix and a (1,output_dim) bias vector
   def __init__(self, input_dim, output_dim):
-    self.weights = np.ones((input_dim, output_dim))*.5 #np.random.randn(input_dim, output_dim)* np.sqrt(2. / input_dim)
-    self.bias =np.zeros((1,output_dim))#np.ones( (1,output_dim) )*0.5
-    
-    
-  # During the forward pass, we simply compute XW+b
+    self.weights = np.random.randn(input_dim, output_dim)* np.sqrt(2. / input_dim)
+    self.bias = np.ones( (1,output_dim) )*0.5
+
+ # During the forward pass, we simply compute Xw+b
   def forward(self, input):
-    self.input = input
-    return self.input@self.weights+self.bias
+    self.input = input #Storing X
+    return  self.input@self.weights + self.bias
 
 
   # Inputs:
