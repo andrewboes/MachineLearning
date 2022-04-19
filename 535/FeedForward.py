@@ -16,11 +16,11 @@ logging.basicConfig(
 ######################################################
 # Q4 Implement Init, Forward, and Backward For Layers
 ######################################################
-def softmax(x):
+def old_softmax(x):
   eList = np.exp(x)
   return eList / np.sum(eList)
 
-def stable_softmax(X):
+def softmax(X):
   exps = np.exp(X - np.max(X))
   return exps / np.sum(exps)
 
@@ -34,14 +34,12 @@ class CrossEntropySoftmax:
   def forward(self, logits, labels):
     self.labels = labels
     self.logitsSoftmax = softmax(logits)
-    logLikelihood = -np.log(self.logitsSoftmax[range(labels.shape[0]), labels])
+    logLikelihood = -np.log(self.logitsSoftmax[range(labels.shape[0]), labels]+0.00001)
     return np.sum(logLikelihood)/labels.shape[0]
     
 
   # Compute the gradient of the cross entropy loss with respect to the the input logits
   def backward(self):
-    #m =self.labels.shape[0]
-    #grad = softmax(X)
     self.logitsSoftmax[range(self.labels.shape[0]),self.labels] -= 1
     self.logitsSoftmax = self.logitsSoftmax/self.labels.shape[0]
     return self.logitsSoftmax
@@ -128,14 +126,28 @@ class LinearLayer:
 
 # Given a model, X/Y dataset, and batch size, return the average cross-entropy loss and accuracy over the set
 def evaluate(model, X_val, Y_val, batch_size):
-  raise Exception('Student error: You haven\'t implemented the step for evalute function.')
+  val_loss_running = 0
+  val_acc_running = 0
+  j=0
+  lossFunc = CrossEntropySoftmax()
+  while j < len(X_val):
+    b = min(batch_size, len(X_val)-j)
+    X_batch = X_val[j:j+b]
+    Y_batch = Y_val[j:j+b].astype(int)
+    logits = model.forward(X_batch)
+    loss = lossFunc.forward(logits, Y_batch)
+    acc = np.mean( np.argmax(logits,axis=1)[:,np.newaxis] == Y_batch)
+    val_loss_running += loss*b
+    val_acc_running += acc*b       
+    j+=batch_size
+  return val_loss_running/len(X_val), val_acc_running/len(X_val)
 
 
 def main():
 
   # Set optimization parameters (NEED TO CHANGE THESE)
   batch_size = 1
-  max_epochs = 10
+  max_epochs = 100
   step_size = 1
 
   number_of_layers = 1
@@ -173,7 +185,7 @@ def main():
       # Gather batch
       batchInstanceSize = min(batch_size, len(X_train)-j)
       X_batch = X_train[trainingIndexes[j:j+batchInstanceSize]]
-      Y_batch = Y_train[trainingIndexes[j:j+batchInstanceSize]].astype(np.int)      
+      Y_batch = Y_train[trainingIndexes[j:j+batchInstanceSize]].astype(int)      
       results = network.forward(X_batch) # Compute forward pass
       accuracy = np.mean( np.argmax(results,axis=1)[:,np.newaxis] == Y_batch)      
       loss = lossFunc.forward(results, Y_batch) # Compute loss
