@@ -6,6 +6,7 @@ import matplotlib
 font = {'weight' : 'normal','size'   : 22}
 matplotlib.rc('font', **font)
 import logging
+from datetime import datetime
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
@@ -36,19 +37,21 @@ class CrossEntropySoftmax:
   #
   # Output should be a positive scalar value equal to the average cross entropy loss after softmax
   
+# =============================================================================
+#     self.logitsSoftmax = softmax(logits)	    return -np.mean(np.log(self.probs[np.arange(len(self.probs))[:,np.newaxis],labels]+0.00001))
+#     logLikelihood = -np.log(self.logitsSoftmax[range(labels.shape[0]), labels]+0.00001)	
+#     return np.sum(logLikelihood)/labels.shape[0]
+# =============================================================================
   
   def forward(self, logits, labels):
-    self.labels = labels
     self.logitsSoftmax = softmax(logits)
-    logLikelihood = -np.log(self.logitsSoftmax[range(labels.shape[0]), labels]+0.00001)
-    return np.sum(logLikelihood)/labels.shape[0]
-    
+    self.labels = labels
+    return -np.mean(np.log(self.logitsSoftmax[np.arange(len(self.logitsSoftmax))[:,np.newaxis],labels]+0.00001))
 
-  # Compute the gradient of the cross entropy loss with respect to the the input logits
   def backward(self):
-    self.logitsSoftmax[range(self.labels.shape[0]),self.labels] -= 1
-    self.logitsSoftmax = self.logitsSoftmax/self.labels.shape[0]
-    return self.logitsSoftmax
+    grad = self.logitsSoftmax 
+    grad[np.arange(len(self.logitsSoftmax ))[:,np.newaxis],self.labels] -=  1
+    return  grad.astype(np.float64)/len(self.logitsSoftmax )
     
 
 
@@ -65,16 +68,20 @@ class ReLU:
     return grad * self.mask
 
   # No parameters so nothing to do during a gradient descent step
-  def step(self,step_size):
+  def step(self,step_size, currentStep):
     return
 
 
 class LinearLayer:
 
-   # Initialize our layer with (input_dim, output_dim) weight matrix and a (1,output_dim) bias vector
+  # Initialize our layer with (input_dim, output_dim) weight matrix and a (1,output_dim) bias vector
   def __init__(self, input_dim, output_dim):
+    self.averageGradient = 0
+    self.numGradients = 0
     self.weights = np.random.randn(input_dim, output_dim)* np.sqrt(2. / input_dim)
     self.bias = np.ones( (1,output_dim) )*0.5
+    self.mt = np.ones((1,output_dim))
+    self.vt = np.ones((1,output_dim))
 
  # During the forward pass, we simply compute Xw+b
   def forward(self, input):
@@ -110,19 +117,23 @@ class LinearLayer:
     #have dL/dZ, need dL/dX
     self.grad_weights = (self.input.T @ grad) # Compute dL/dW
     self.grad_bias = grad.sum() # Compute dL/db
+    self.grad = grad
     return (grad @ self.weights.T)# Compute dL/dX
     
   ######################################################
   # Q5 Implement ADAM with Weight Decay
   ######################################################  
-  def step(self, step_size):
+  def step(self, step_size, beta1 = .1, beta2 = .1, epsilon = 1e-6, currentStep = -1):
     #TODO: implment weight decay
-    self.weights -= step_size*self.grad_weights
+    self.mt = beta1 * self.mt + (1. - beta1) * self.grad_weights
+    self.vt = beta2 * self.vt + (1. - beta2) * self.grad_weights ** 2
+    mt = self.mt
+    vt = self.vt
+    mt_hat = self.mt / (1. - beta1 ** (currentStep+1))
+    vt_hat = self.vt / (1. - beta2 ** (currentStep+1))
+    self.weights = self.weights -  (step_size / (np.sqrt(vt_hat) + epsilon)) * mt_hat
+    #self.weights -= step_size*self.grad_weights
     self.bias -= step_size*self.grad_bias
-
-
-
-
 
 
 ######################################################
@@ -149,18 +160,22 @@ def evaluate(model, X_val, Y_val, batch_size):
 
 
 def main():
-
-  # Set optimization parameters (NEED TO CHANGE THESE)
-  batch_size = 5
-  max_epochs = 20
-  step_size = .2
-
-  number_of_layers = 2
-  width_of_layers = 5
-
-
   # Load data
   X_train, Y_train, X_val, Y_val, X_test, Y_test = loadCIFAR10Data()
+  for n in [1,.1,.01,.001,.0001]:
+    runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, n)
+  
+def runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, param):
+
+  # Set optimization parameters (NEED TO CHANGE THESE)
+  batch_size = 200
+  max_epochs = 15
+  step_size = .01
+  number_of_layers = 2
+  width_of_layers = 8
+  randomSeed = 1005
+
+
   
   # Some helpful dimensions
   num_examples, input_dim = X_train.shape
@@ -169,9 +184,20 @@ def main():
 
   # Build a network with input feature dimensions, output feature dimension,
   # hidden dimension, and number of layers as specified below. You can edit this as you please.
-  network = FeedForwardNeuralNetwork(input_dim,output_dim, width_of_layers, number_of_layers)
 
+
+
+  #trainingIndexes = np.arange(len(X_train))
+  # For each epoch below max epochs
+  bestRunPercent = -1
+  bestRunEpoch = -1
+  bestRunLoss = -1
+  np.random.seed(randomSeed)
   # Some lists for book-keeping for plotting later
+  trainingIndexes = np.arange(len(X_train))
+  bestRunPercent = -1
+  bestRunEpoch = -1
+  bestRunLoss = -1
   losses = []
   val_losses = []
   accs = []
@@ -179,9 +205,8 @@ def main():
   lossFunc = CrossEntropySoftmax()
   acc_running = 0
   loss_running = 0
-  
-  trainingIndexes = np.arange(len(X_train))
-  # For each epoch below max epochs
+  step_size = param
+  network = FeedForwardNeuralNetwork(input_dim,output_dim, width_of_layers, number_of_layers)
   for i in range(max_epochs):
     np.random.shuffle(trainingIndexes) # Scramble order of examples
     j=acc_running=loss_running=0                
@@ -197,7 +222,7 @@ def main():
       #print(loss)
       lossGrad = lossFunc.backward()
       network.backward(lossGrad) # Backward loss and networks
-      network.step(step_size)# Take optimizer step
+      network.step(step_size, currentStep=i)# Take optimizer step
 
       # Book-keeping for loss / accuracy
       losses.append(loss)
@@ -220,8 +245,11 @@ def main():
     #epoch_avg_acc = acc_running / len(X_train)*100 #-- average accuracy across batches this epoch
     
     
-    logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,loss_running/len(X_train), acc_running / len(X_train)*100,vacc*100))
-
+    logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%  Val Acc:  {:8.4}%".format(i,loss_running/len(X_train), acc_running / len(X_train)*100,vacc*100))
+    if vacc > bestRunPercent:
+        bestRunPercent = vacc
+        bestRunEpoch = i
+        bestRunLoss = loss_running/len(X_train)
     
   ###############################################################
   # Code for producing output plot requires
@@ -255,7 +283,10 @@ def main():
   ax1.legend(loc="center")
   ax2.legend(loc="center right")
   plt.show()  
-
+  file = open("runs.txt", "a")
+  runTimeKey = str(datetime.now().strftime("%Y%b%dT%H:%M:%S"))
+  file.writelines("{},{},{},{},{},{},{},{},{},{}\n".format(runTimeKey,randomSeed,step_size,batch_size,max_epochs,number_of_layers,width_of_layers,bestRunEpoch,bestRunPercent*100,bestRunLoss))
+  file.close()  
 
   ################################
   # Q7 Tune and Evaluate on Test
@@ -293,9 +324,9 @@ class FeedForwardNeuralNetwork:
     for layer in reversed(self.layers):
       grad = layer.backward(grad)
 
-  def step(self, step_size):
+  def step(self, step_size, currentStep):
     for layer in self.layers:
-      layer.step(step_size)
+      layer.step(step_size, currentStep)
 
 
 
@@ -325,7 +356,7 @@ def loadCIFAR10Data():
   logging.info("Loaded train: " + str(X_train.shape))
   logging.info("Loaded val: " + str(X_val.shape))
   logging.info("Loaded test: " + str(X_test.shape))
-  X_train = (X_train/256)-0.5
+  X_train = (X_train/256)
   return X_train, Y_train, X_val, Y_val, X_test, Y_test
 
 
