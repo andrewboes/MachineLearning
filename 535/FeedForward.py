@@ -80,8 +80,8 @@ class LinearLayer:
     self.numGradients = 0
     self.weights = np.random.randn(input_dim, output_dim)* np.sqrt(2. / input_dim)
     self.bias = np.ones( (1,output_dim) )*0.5
-    self.mt = np.ones((1,output_dim))
-    self.vt = np.ones((1,output_dim))
+    self.s = np.zeros((1,output_dim))
+    self.r = np.zeros((1,output_dim))
 
  # During the forward pass, we simply compute Xw+b
   def forward(self, input):
@@ -123,16 +123,13 @@ class LinearLayer:
   ######################################################
   # Q5 Implement ADAM with Weight Decay
   ######################################################  
-  def step(self, step_size, beta1 = .1, beta2 = .1, epsilon = 1e-6, currentStep = -1):
+  def step(self, step_size, currentStep, rho1 = .9, rho2 = .9, epsilon = 1e-6):
     #TODO: implment weight decay
-    self.mt = beta1 * self.mt + (1. - beta1) * self.grad_weights
-    self.vt = beta2 * self.vt + (1. - beta2) * self.grad_weights ** 2
-    mt = self.mt
-    vt = self.vt
-    mt_hat = self.mt / (1. - beta1 ** (currentStep+1))
-    vt_hat = self.vt / (1. - beta2 ** (currentStep+1))
-    self.weights = self.weights -  (step_size / (np.sqrt(vt_hat) + epsilon)) * mt_hat
-    #self.weights -= step_size*self.grad_weights
+    self.s = rho1 * self.s + (1. - rho1) * self.grad_weights
+    self.r = rho2 * self.r + (1. - rho2) * self.grad_weights ** 2
+    s_hat = self.s / (1. - rho1 ** (currentStep+1))
+    r_hat = self.r / (1. - rho2 ** (currentStep+1))
+    self.weights = self.weights -  step_size*(s_hat / (np.sqrt(r_hat) + epsilon))
     self.bias -= step_size*self.grad_bias
 
 
@@ -162,17 +159,17 @@ def evaluate(model, X_val, Y_val, batch_size):
 def main():
   # Load data
   X_train, Y_train, X_val, Y_val, X_test, Y_test = loadCIFAR10Data()
-  for n in [1,.1,.01,.001,.0001]:
+  for n in [.01]:
     runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, n)
   
 def runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, param):
 
   # Set optimization parameters (NEED TO CHANGE THESE)
   batch_size = 200
-  max_epochs = 15
-  step_size = .01
-  number_of_layers = 2
-  width_of_layers = 8
+  max_epochs = 150
+  step_size = .0001
+  number_of_layers = 4
+  width_of_layers = 246
   randomSeed = 1005
 
 
@@ -205,7 +202,7 @@ def runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, param):
   lossFunc = CrossEntropySoftmax()
   acc_running = 0
   loss_running = 0
-  step_size = param
+  #step_size = param
   network = FeedForwardNeuralNetwork(input_dim,output_dim, width_of_layers, number_of_layers)
   for i in range(max_epochs):
     np.random.shuffle(trainingIndexes) # Scramble order of examples
@@ -222,7 +219,7 @@ def runNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, param):
       #print(loss)
       lossGrad = lossFunc.backward()
       network.backward(lossGrad) # Backward loss and networks
-      network.step(step_size, currentStep=i)# Take optimizer step
+      network.step(step_size, i)# Take optimizer step
 
       # Book-keeping for loss / accuracy
       losses.append(loss)
