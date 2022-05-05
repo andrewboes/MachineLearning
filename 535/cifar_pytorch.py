@@ -56,7 +56,8 @@ class Net(nn.Module):
     x = self.excuteAndPrint(F.relu, x) #relu4
     x = self.excuteAndPrint(self.pool, x)
     x = x.view(-1, self.num_flat_features(x))
-    #print(x.size())
+    if debugMessages:
+      print(x.size())
     x = self.excuteAndPrint(self.fc1, x)
     x = self.excuteAndPrint(F.relu, x) #relu5
     x = self.excuteAndPrint(self.fc2, x)
@@ -113,25 +114,11 @@ class CIFAR3(Dataset):
 # Training and Evaluation
 #########################################################
 def main():
-  
-  train_transform = transforms.Compose([
-          transforms.ToPILImage(), #new
-          transforms.ColorJitter(),
-          transforms.RandomRotation(30),
-          transforms.RandomHorizontalFlip(),
-          transforms.ToTensor(), #new
-          transforms.Normalize(mean=[0.5, 0.5, 0.5],
-                               std=[0.5, 0.5, 0.5])
-      ])
-  
-  test_transform = transforms.Compose([
-          transforms.Normalize(mean=[0.5, 0.5, 0.5],
-                               std=[0.5, 0.5, 0.5])
-      ])
-  
-  train_data = CIFAR3("train", transform=train_transform)
-  val_data = CIFAR3("val", transform=test_transform)
-  test_data = CIFAR3("test", transform=test_transform)
+  transform = transforms.Compose([transforms.ToPILImage(), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    
+  train_data = CIFAR3("train", transform=transform)
+  val_data = CIFAR3("val", transform=transform)
+  test_data = CIFAR3("test", transform=transform)
   
   batch_size = 256
   trainloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
