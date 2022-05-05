@@ -114,11 +114,20 @@ class CIFAR3(Dataset):
 # Training and Evaluation
 #########################################################
 def main():
-  transform = transforms.Compose([transforms.ToPILImage(), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+  train_transform = transforms.Compose(
+  [
+    transforms.ToPILImage(),  
+    transforms.ColorJitter(), 
+    transforms.RandomRotation(30), 
+    transforms.RandomHorizontalFlip(), 
+    transforms.ToTensor(), 
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+  ])
+  test_transform = transforms.Compose([transforms.ToPILImage(), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
-  train_data = CIFAR3("train", transform=transform)
-  val_data = CIFAR3("val", transform=transform)
-  test_data = CIFAR3("test", transform=transform)
+  train_data = CIFAR3("train", transform=train_transform)
+  val_data = CIFAR3("val", transform=test_transform)
+  test_data = CIFAR3("test", transform=test_transform)
   
   batch_size = 256
   trainloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
