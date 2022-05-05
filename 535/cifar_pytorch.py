@@ -24,48 +24,41 @@ from torchvision import transforms, datasets
 import matplotlib
 import matplotlib.pyplot as plt
 
+debugMessages = False
 
 
 class Net(nn.Module):
   def __init__(self):
     super(Net, self).__init__()
     self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
-    #relu1
-    self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+    self.conv2 = nn.Conv2d(32, 32, 3, padding=1)
     self.pool = nn.MaxPool2d(2, 2)
-    #relu2
-    self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
-    #relu3
-    self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
-    #relu4
+    self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+    self.conv4 = nn.Conv2d(64, 3, 3, padding=1)
     self.fc1 = nn.Linear(8, 512)
-    #relu5
-    self.fc2 = nn.Linear(512, 3)
-              
-        
-        
-# =============================================================================
-#         self.conv1 = nn.Conv2d(3, 6, 5)
-#         self.pool = nn.MaxPool2d(2, 2)
-#         self.conv2 = nn.Conv2d(6, 16, 5)
-#         self.fc1 = nn.Linear(16 * 5 * 5, 120)
-#         self.fc2 = nn.Linear(120, 84)
-#         self.fc3 = nn.Linear(84, 10)
-# =============================================================================
+    self.fc2 = nn.Linear(512, 3)  
+
+  def excuteAndPrint(self, function, x):
+    x = function(x)
+    if debugMessages:
+      print("{:}, after {:}".format(x.size(), function))
+    return x
 
   def forward(self, x):
-    x = self.conv1(x)
-    x = F.relu(x) #relu1
-    x = self.conv2(x)
-    x = F.relu(self.pool(x)) #relu2
-    x = self.conv3(x)
-    x = F.relu(x) #relu3
-    x = self.conv4(x)
-    x = F.relu(x) #relu4
-    x = self.pool(x)
-    x = self.fc1(x)
-    x = F.relu(x) #relu5
-    x = self.fc2(x)
+    x = self.excuteAndPrint(self.conv1, x)
+    x = self.excuteAndPrint(F.relu, x) #relu1
+    x = self.excuteAndPrint(self.conv2, x)
+    x = self.excuteAndPrint(self.pool, x)
+    x = self.excuteAndPrint(F.relu, x) #relu2
+    x = self.excuteAndPrint(self.conv3, x)
+    x = self.excuteAndPrint(F.relu, x) #relu3
+    x = self.excuteAndPrint(self.conv4, x)
+    x = self.excuteAndPrint(F.relu, x) #relu4
+    x = self.excuteAndPrint(self.pool, x)
+    x = self.excuteAndPrint(self.fc1, x)
+    x = self.excuteAndPrint(F.relu, x) #relu5
+    x = self.excuteAndPrint(self.fc2, x)
+    x = x.view(-1, self.num_flat_features(x))
     return x
 
   def num_flat_features(self, x):
@@ -121,16 +114,18 @@ class CIFAR3(Dataset):
 def main():
   
   train_transform = transforms.Compose([
+          transforms.ToPILImage(), #new
           transforms.ColorJitter(),
           transforms.RandomRotation(30),
           transforms.RandomHorizontalFlip(),
-          transforms.Normalize(mean=[127.5, 127.5, 127.5],
-                               std=[127.5, 127.5, 127.5])
+          transforms.ToTensor(), #new
+          transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                               std=[0.5, 0.5, 0.5])
       ])
   
   test_transform = transforms.Compose([
-          transforms.Normalize(mean=[127.5, 127.5, 127.5],
-                               std=[127.5, 127.5, 127.5])
+          transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                               std=[0.5, 0.5, 0.5])
       ])
   
   train_data = CIFAR3("train", transform=train_transform)
