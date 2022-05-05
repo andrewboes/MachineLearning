@@ -215,7 +215,21 @@ def main():
   torch.save(bestRunDict, PATH)
   print(bestRunPercent)
   print(bestRunEpoch)
+  net = Net() #Q4
+  net.to('cpu')
+  net.load_state_dict(torch.load(PATH))  
   
+  correct = 0
+  total = 0
+  with torch.no_grad(): #not training, no gradients needed
+    for data in testloader:
+      images, labels = data
+      outputs = net(images)
+      _, predicted = torch.max(outputs, 1)
+      total += labels.size(0)
+      correct += (predicted == labels).sum().item()
+      
+  print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
   # Plot training and validation curves
   fig, ax1 = plt.subplots(figsize=(16,9))
   color = 'tab:red'
