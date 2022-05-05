@@ -25,7 +25,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 debugMessages = False
-
+PATH = './cifarBestRun.pth'
 
 class Net(nn.Module):
   def __init__(self):
@@ -36,31 +36,33 @@ class Net(nn.Module):
     self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
     self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
     self.fc1 = nn.Linear(4096, 512)
+    self.bn =nn.BatchNorm1d(512) #Q3
     self.fc2 = nn.Linear(512, 3)  
 
-  def excuteAndPrint(self, function, x):
+  def executeAndPrint(self, function, x):
     x = function(x)
     if debugMessages:
       print("{:}, after {:}".format(x.size(), function))
     return x
 
   def forward(self, x):
-    x = self.excuteAndPrint(self.conv1, x)
-    x = self.excuteAndPrint(F.relu, x) #relu1
-    x = self.excuteAndPrint(self.conv2, x)
-    x = self.excuteAndPrint(self.pool, x)
-    x = self.excuteAndPrint(F.relu, x) #relu2
-    x = self.excuteAndPrint(self.conv3, x)
-    x = self.excuteAndPrint(F.relu, x) #relu3
-    x = self.excuteAndPrint(self.conv4, x)
-    x = self.excuteAndPrint(F.relu, x) #relu4
-    x = self.excuteAndPrint(self.pool, x)
+    x = self.executeAndPrint(self.conv1, x)
+    x = self.executeAndPrint(F.relu, x) #relu1
+    x = self.executeAndPrint(self.conv2, x)
+    x = self.executeAndPrint(self.pool, x)
+    x = self.executeAndPrint(F.relu, x) #relu2
+    x = self.executeAndPrint(self.conv3, x)
+    x = self.executeAndPrint(F.relu, x) #relu3
+    x = self.executeAndPrint(self.conv4, x)
+    x = self.executeAndPrint(F.relu, x) #relu4
+    x = self.executeAndPrint(self.pool, x)
     x = x.view(-1, self.num_flat_features(x))
     if debugMessages:
       print(x.size())
-    x = self.excuteAndPrint(self.fc1, x)
-    x = self.excuteAndPrint(F.relu, x) #relu5
-    x = self.excuteAndPrint(self.fc2, x)
+    x = self.executeAndPrint(self.fc1, x)
+    x = self.executeAndPrint(self.bn, x) #Q3
+    x = self.executeAndPrint(F.relu, x) #relu5
+    x = self.executeAndPrint(self.fc2, x)
     return x
 
   def num_flat_features(self, x):
@@ -134,25 +136,23 @@ def main():
   valloader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=2)
   testloader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=2)
   
-  
   # Build model
   model = Net()
-  
-  
-  # Main training loop
-  optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=0.001)
-  criterion = torch.nn.CrossEntropyLoss()
-  
   device = torch.device('cpu')
-  
   model.to(device)
-  
+  # Main training loop
+  optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0.001)
+  criterion = torch.nn.CrossEntropyLoss()
+  #book keeping
   loss_log = []
   acc_log = []
   val_acc_log = []
   val_loss_log = []
+  bestRunPercent = -1
+  bestRunDict = -1
+  bestRunEpoch = -1
   
-  for i in range(50):
+  for i in range(5):
   
     # Run an epoch of training
     train_running_loss = 0
@@ -207,7 +207,14 @@ def main():
     val_loss_log.append(val_loss)
   
     logging.info("[Epoch {:3}]   Loss:  {:8.4}     Train Acc:  {:8.4}%      Val Acc:  {:8.4}%".format(i,train_running_loss, train_running_acc*100,val_acc*100))
+    if val_acc > bestRunPercent:
+      bestRunPercent = val_acc
+      bestRunDict = model.state_dict()
+      bestRunEpoch = i
   
+  torch.save(bestRunDict, PATH)
+  print(bestRunPercent)
+  print(bestRunEpoch)
   
   # Plot training and validation curves
   fig, ax1 = plt.subplots(figsize=(16,9))
