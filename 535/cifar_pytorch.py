@@ -24,6 +24,7 @@ from torchvision import transforms, datasets
 import matplotlib
 import matplotlib.pyplot as plt
 
+#globals
 debugMessages = False
 PATH = './cifarBestRun.pth'
 
@@ -152,7 +153,7 @@ def main():
   bestRunDict = -1
   bestRunEpoch = -1
   
-  for i in range(5):
+  for i in range(100):
   
     # Run an epoch of training
     train_running_loss = 0
@@ -215,16 +216,16 @@ def main():
   torch.save(bestRunDict, PATH)
   print(bestRunPercent)
   print(bestRunEpoch)
-  net = Net() #Q4
-  net.to('cpu')
-  net.load_state_dict(torch.load(PATH))  
+  testNet = Net() #Q3
+  testNet.to('cpu')
+  testNet.load_state_dict(torch.load(PATH))  
   
   correct = 0
   total = 0
   with torch.no_grad(): #not training, no gradients needed
     for data in testloader:
       images, labels = data
-      outputs = net(images)
+      outputs = testNet(images)
       _, predicted = torch.max(outputs, 1)
       total += labels.size(0)
       correct += (predicted == labels).sum().item()
