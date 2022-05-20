@@ -82,7 +82,7 @@ def main():
   #object_detection_api(img_ex_path, model, threshold=0.8)
   box_dictionary = {}
   
-  for x in list_motdata[530:570]: #530:570
+  for x in list_motdata[539:570]: #539:570
     img_ex_path = motdata + x
     #img_ex_origin = cv2.imread(img_ex_path)
     #img_ex = cv2.cvtColor(img_ex_origin, cv2.COLOR_BGR2RGB)
@@ -115,6 +115,9 @@ def main():
     det_img = cv2.imread(os.path.join(img_path, key))
     #overlay = det_img.copy()
     det_result = data[key] 
+    mot_imgid = key.replace('.jpg','')
+    newname = save_path + mot_imgid + '_mot.jpg'
+    print(mot_imgid)
     
     for info in det_result:
       labels =  info.get('labels')
@@ -124,32 +127,28 @@ def main():
         scores =  info.get('scores')
         templist = bbox + [scores]
         arrlist.append(templist)
+    
+    if len(arrlist) > 0: 
+      track_bbs_ids = mot_tracker.update(np.array(arrlist))
+      for j in range(track_bbs_ids.shape[0]):  
+          ele = track_bbs_ids[j, :]
+          x = int(ele[0])
+          y = int(ele[1])
+          x2 = int(ele[2])
+          y2 = int(ele[3])
+          track_label = str(int(ele[4])) 
+          cv2.rectangle(det_img, (x, y), (x2, y2), (0, 255, 255), 4)
+          cv2.putText(det_img, '#'+track_label, (x+5, y-10), 0,0.6,(0,255,255),thickness=2)
       
-    track_bbs_ids = mot_tracker.update(np.array(arrlist))
-    
-    mot_imgid = key.replace('.jpg','')
-    newname = save_path + mot_imgid + '_mot.jpg'
-    print(mot_imgid)
-    
-    for j in range(track_bbs_ids.shape[0]):  
-        ele = track_bbs_ids[j, :]
-        x = int(ele[0])
-        y = int(ele[1])
-        x2 = int(ele[2])
-        y2 = int(ele[3])
-        track_label = str(int(ele[4])) 
-        cv2.rectangle(det_img, (x, y), (x2, y2), (0, 255, 255), 4)
-        cv2.putText(det_img, '#'+track_label, (x+5, y-10), 0,0.6,(0,255,255),thickness=2)
-    
     cv2.imwrite(newname,det_img)
 
+  
   frameslist = os.listdir(save_path)
   import imageio
   images = []
   for filename in frameslist:
-    print(filename)
     images.append(imageio.imread(save_path + filename))
-  imageio.mimsave(MOT_PATH + "movie.gif", images, fps=3)
+  imageio.mimsave(MOT_PATH + "movie.gif", images, fps=2)
   
 
 if __name__=="__main__":
