@@ -27,6 +27,7 @@ MOT_PATH = mot
 #motdata = MOT_PATH + 'train/MOT17-09/img1/' #people
 motdata = MOT_PATH + 'data/' #boats
 jsonpath =   MOT_PATH + 'data.json'
+save_path = MOT_PATH + 'save/'
 COCO_INSTANCE_CATEGORY_NAMES = [
   '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
   'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
@@ -107,7 +108,7 @@ def main():
   img_path = motdata    # img root path
 
 # Making new directory for saving results
-  save_path = MOT_PATH + 'save/'
+  
   mot_tracker = Sort() 
   for key in odata.keys():   
     arrlist = []
@@ -139,9 +140,16 @@ def main():
         track_label = str(int(ele[4])) 
         cv2.rectangle(det_img, (x, y), (x2, y2), (0, 255, 255), 4)
         cv2.putText(det_img, '#'+track_label, (x+5, y-10), 0,0.6,(0,255,255),thickness=2)
-        
+    
     cv2.imwrite(newname,det_img)
 
+  frameslist = os.listdir(save_path)
+  import imageio
+  images = []
+  for filename in frameslist:
+    print(filename)
+    images.append(imageio.imread(save_path + filename))
+  imageio.mimsave(MOT_PATH + "movie.gif", images, fps=3)
   
 
 if __name__=="__main__":
