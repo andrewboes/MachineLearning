@@ -80,6 +80,8 @@ def main():
   noBoatDirectory = 'noBoat/'
   folder = 'C:/Users/boesan/Downloads/20220415/'
 
+  #Parse .mp4 files
+  # =============================================================================
   for root, dirs, files in os.walk(folder):#get list of *.mp4 files
     for file in files:
         if file.endswith('.mp4'):#loop through files
@@ -88,8 +90,10 @@ def main():
           if not os.path.isdir(newFolder): #make new folder
             os.makedirs(newFolder)
             parseVideo(file, folder, newFolder) #parse video in pictures
+  # =============================================================================
   
-  #print(glob.glob(folder + '/*'))
+  #Classify .jpgs
+  # =============================================================================
   model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
   model.eval()
   directories= [d for d in os.listdir(folder) if os.path.isdir(folder + d)]
@@ -106,14 +110,15 @@ def main():
       os.makedirs(b)
     if not os.path.isdir(nb): #make new folder
       os.makedirs(nb)
-    fileList = [f for f in os.listdir(pathToCurrentDirectory) if os.path.isfile(pathToCurrentDirectory + f)] #os.listdir(pathToCurrentDirectory) if os.path.isdir(folder + d)
+    fileList = [f for f in os.listdir(pathToCurrentDirectory) if os.path.isfile(pathToCurrentDirectory + f)] 
     fileList.sort()
     for file in fileList:
       fileName, output = classifyFile(pathToCurrentDirectory+file, model, j, b, nb)
       directoryOutput[fileName + ".jpg"] = output
     with open(j+'directoryOutput.json', 'w') as fp:
       json.dump(directoryOutput, fp)  
-
+    # =============================================================================
+    
     
 if __name__=="__main__":
   main()
