@@ -11,6 +11,7 @@ import os
 import torch
 import json
 import shutil
+import collections
 
 
 COCO_INSTANCE_CATEGORY_NAMES = [
@@ -59,16 +60,23 @@ def classifyFile(file, model, jsonDir, boatDir, noBoatDir):
   print(file)
   pred_boxes, pred_class, pred_score = get_prediction(file, model)
   fileName = os.path.splitext(os.path.basename(file))[0]
+  key = os.path.basename(file)
   output = {}
-  copied = False
+  output[key] = []
+  hasBoat = False
   if pred_score:
     for i, score in enumerate(pred_score):
       if score > threshold and pred_class[i] == "boat": #only boats for now
-        copied = True
+        hasBoat = True
         newBox = {"bbox": [pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]], "scores": float(score), "labels": pred_class[i]}
-        output = newBox
-        shutil.copyfile(file, boatDir+fileName+'.jpg')
-  if not copied:
+        if len(output[key]) == 0:
+          output[key] = [newBox]  
+        else:
+          output[key].append(newBox)
+        
+  if hasBoat:
+    shutil.copyfile(file, boatDir+fileName+'.jpg')
+  else:
     shutil.copyfile(file, noBoatDir+fileName+'.jpg')
   with open(jsonDir + fileName + '.json', 'w') as fp:
     json.dump(output, fp)  
@@ -78,6 +86,7 @@ def main():
   jsonDirectory = 'json/'
   withBoatDirectory = 'boat/'
   noBoatDirectory = 'noBoat/'
+  littleBoats = 'littleBoats/'
   folder = 'C:/Users/boesan/Downloads/20220415/'
 
   #Parse .mp4 files
@@ -92,11 +101,12 @@ def main():
             parseVideo(file, folder, newFolder) #parse video in pictures
   # =============================================================================
   
+  directories= [d for d in os.listdir(folder) if os.path.isdir(folder + d)]
+  
   #Classify .jpgs
   # =============================================================================
   model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-  model.eval()
-  directories= [d for d in os.listdir(folder) if os.path.isdir(folder + d)]
+  model.eval() 
   
   for directory in directories:
     directoryOutput = {}
@@ -110,15 +120,47 @@ def main():
       os.makedirs(b)
     if not os.path.isdir(nb): #make new folder
       os.makedirs(nb)
-    fileList = [f for f in os.listdir(pathToCurrentDirectory) if os.path.isfile(pathToCurrentDirectory + f)] 
+    fileList = [f for f in os.listdir(pathToCurrentDirectory) if os.path.isfile(pathToCurrentDirectory + f)]
     fileList.sort()
-    for file in fileList:
+    for i, file in enumerate(fileList):
       fileName, output = classifyFile(pathToCurrentDirectory+file, model, j, b, nb)
-      directoryOutput[fileName + ".jpg"] = output
+      directoryOutput[fileName + ".jpg"] = output[fileName + ".jpg"]
     with open(j+'directoryOutput.json', 'w') as fp:
       json.dump(directoryOutput, fp)  
     # =============================================================================
     
+  #get 'small' boat pics
+  # =============================================================================
+  for directory in directories:
+  #load 'master' json file
+    fullDirectoryJson = folder + directory + '/' +jsonDirectory +'directoryOutput.json'
+    with open(fullDirectoryJson) as data_file:    
+       data = json.load(data_file)
+    odata = collections.OrderedDict(sorted(data.items()))
+    littleBoatsFolder = folder + directory + '/' + littleBoats   
+    if not os.path.isdir(littleBoatsFolder): #make new folder
+      os.makedirs(littleBoatsFolder)
+    for i, key in enumerate(odata.keys()):   
+      file = folder + directory + '/' + key
+      for info in data[key]:
+        labels = info.get('labels')
+        if labels == "boat": # label 1 is a person in MS COCO Dataset, 9 is boat
+          bbox = info.get('bbox')
+          print(bbox)
+          img = cv2.imread(file)
+          print(bbox[2])
+          crop_img = img[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
+          newname = littleBoatsFolder + str(i) +"_" + os.path.basename(file)
+          cv2.imwrite(newname,crop_img)
+          
+    # =============================================================================
+          
+
+
+      
+
+    
+    # =============================================================================
     
 if __name__=="__main__":
   main()
