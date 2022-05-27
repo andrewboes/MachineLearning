@@ -15,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torch.autograd import Variable 
 
 # Imports for plotting our result curves
 import matplotlib
@@ -33,17 +33,22 @@ dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
  
 # Main Driver Loop
 def main():
-
-    # Build the model and put it on the GPU
-    logging.info("Building model")
-    model = ParityLSTM()
-    model.to(dev) # move to GPU if cuda is enabled
+    input_size = 2 #number of features
+    hidden_size = 64 #number of features in hidden state
+    num_layers = 1 #number of stacked lstm layers
+    num_classes = 1 #number of output classes 
+    num_classes = 1 #number of output classes 
 
 
     logging.info("Training model")
     maximum_training_sequence_length = 5
     train = Parity(split='train', max_length=maximum_training_sequence_length)
-    train_loader = DataLoader(train, batch_size=100, shuffle=True, collate_fn=pad_collate)
+    train_loader = DataLoader(train, batch_size=100, shuffle=True)#, collate_fn=pad_collate)
+        
+    seq_length = len(train)
+    model = ParityLSTM(hidden_size, num_classes, num_layers, input_size, seq_length)
+    model.to(dev) # move to GPU if cuda is enabled
+    
     train_model(model, train_loader)
 
 
@@ -58,14 +63,28 @@ def main():
 ######################################################################
 
 # Implement a LSTM model for the parity task. 
+# Tutorial: https://cnvrg.io/pytorch-lstm/
+
 
 class ParityLSTM(torch.nn.Module) :
 
     # __init__ builds the internal components of the model (presumably an LSTM and linear layer for classification)
     # The LSTM should have hidden dimension equal to hidden_dim
 
-    def __init__(self, hidden_dim=64) :
+    def __init__(self, hidden_size, num_classes, num_layers, input_size, seq_length) :
         super().__init__()
+        self.num_classes = num_classes #number of classes
+        self.num_layers = num_layers #number of layers
+        self.input_size = input_size #input size
+        self.hidden_size = hidden_size #hidden state
+        self.seq_length = seq_length #sequence length
+
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
+                          num_layers=num_layers, batch_first=True) #lstm
+        self.fc_1 =  nn.Linear(hidden_size, 128) #fully connected 1
+        self.fc = nn.Linear(128, num_classes) #fully connected last layer
+
+        self.relu = nn.ReLU()
 
     
     # forward runs the model on an B x max_length x 1 tensor and outputs a B x 2 tensor representing a score for 
@@ -80,7 +99,16 @@ class ParityLSTM(torch.nn.Module) :
     # Output:
     #   out -- a batch_size x 2 tensor of scores for even/odd parity    
 
-    def forward(self, x, s):
+    def forward(self, x):#, s):
+        h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #hidden state
+        c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #internal state
+        # Propagate input through LSTM
+        output, (hn, cn) = self.lstm(x, (h_0, c_0)) #lstm with input, hidden, and internal state
+        hn = hn.view(-1, self.hidden_size) #reshaping the data for Dense layer next
+        out = self.relu(hn)
+        out = self.fc_1(out) #first Dense
+        out = self.relu(out) #relu
+        out = self.fc(out) #Final Output
         return out
 
     def __str__(self):
