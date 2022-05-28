@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath}% http://ctan.org/pkg/amsmath
+
+\title{535 HW3}
+
+\begin{document}
+
+
+
+
+\textbf{Q4} Given a binary string s we need to compute y where y=0 if s has an even number 1's and y=1 if s has an odd number of ones. We will manually calculate the weights for this task using an LSTM with the following equations:
+
+
+\begin{equation}
+    i_t = \sigma(w_{ix}x_t + w_{i_h}h_{t-1}+b_i) 
+\end{equation}
+
+\begin{equation}
+    f_t = \sigma(w_{f_x}x_t + w_{f_h}h_{t-1}+b_f) 
+\end{equation}
+
+\begin{equation}
+    o_t = \sigma(w_{ox}x_t + w_{oh}h_{t-1}+b_o) 
+\end{equation}
+
+\begin{equation}
+    g_t = \tanh(w_{g_x}x_t + w_{g_h}h_{t-1}+b_g) 
+\end{equation}
+
+\begin{equation}
+    c_t = f_t c_{t-1} + i_t g_t
+\end{equation}
+
+\begin{equation}
+    h_t = o_t\tanh(c_t)
+\end{equation}
+
+As we are using an LSTM, the only thing we need to know is the parity of the previous values and the current value. The table below shows the different combinations and their output ($h_t$)
+
+\begin{center}\begin{tabular}{ |c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ \\
+\hline
+0 & 0 & 0 \\ 
+0 & 1 & 1 \\ 
+1 & 0 & 1 \\ 
+1 & 1 & 0 \\ 
+\hline
+\end{tabular}\end{center}
+
+We'll set $f_t=1$ to remember all of $c_{t-1}$. The sigmoid function returns one for "very" large values so we'll set $b_f$ to 1000 and the other parameters of $f_t$ to zero. Also, we want $o_t$ to be one so we'll set the parameters similar to $f_t$. This leaves the parameters of $i_t$ and $g_t$, $w_{ix}$, $w_{i_h}$, $b_i$, $w_{g_x}$, $w_{g_h}$, and $b_g$.
+
+Using the first row of the above table and our values for $f_t$ and $o_t$ we have:
+
+\begin{align*}
+    h_t &= o_t\tanh(c_t) \\
+  0 &= 0*\tanh(c_t) \\
+  0&= 0*\tanh(1 * 0 + i_t g_t) \\
+  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= 0
+\end{align*}
+
+Second row:
+
+\begin{align*}
+    h_t &= o_t\tanh(c_t) \\
+  0 &= 1*\tanh(c_t) \\
+  0&= 1*\tanh(1 * 0 + i_t g_t) \\
+  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= 0
+\end{align*}
+
+
+Third row:
+
+\begin{align*}
+    h_t &= o_t\tanh(c_t) \\
+  1 &= 0*\tanh(c_t) \\
+  1 &= 0*\tanh(1 * 0 + i_t g_t) \\
+  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= (large)
+\end{align*}
+
+Fourth row:
+
+\begin{align*}
+    h_t &= o_t\tanh(c_t) \\
+  1 &= 1*\tanh(c_t) \\
+  1 &= 1*\tanh(1 * 0 + i_t g_t) \\
+  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= (large)
+\end{align*}
+
+Letting $w_{i_h}=-.5$, $b_i=-1000$, $w_{g_x}=1.5$, $w_{g_h}=-2000$, and $b_g=1000$
+
+
+
+\end{document}
