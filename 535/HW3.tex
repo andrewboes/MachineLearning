@@ -38,7 +38,7 @@
     h_t = o_t\tanh(c_t)
 \end{equation}
 
-As we are using an LSTM, the only thing we need to know is the parity of the previous values and the current value. The table below shows the different combinations and their output ($h_t$)
+As we are using an LSTM, the only thing we need to know is the parity of the previous values and the current value. The table below shows the different combinations and their output ($h_t$). 
 
 \begin{center}\begin{tabular}{ |c|c|c|c| } 
 \hline
@@ -51,16 +51,8 @@ $h_{t-1}$ & $x_t$ & $h_t$ \\
 \hline
 \end{tabular}\end{center}
 
-\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
-\hline
-$h_{t-1}$ & $x_t$ & $h_t$ & $f_t$ & $f_t$ \\
-\hline
-0 & 0 & 0 & $\sigma(w_{f_x}*0 + w_{f_h}*0+b_f)$ &$\sigma(b_f)$ \\ 
-0 & 1 & 1 & $\sigma(w_{f_x}*1 + w_{f_h}*0+b_f)$ & $\sigma(w_{f_x}+b_f)$ \\ 
-1 & 0 & 1 & $\sigma(w_{f_x}*0 + w_{f_h}*1+b_f)$ & $\sigma(w_{f_h}+b_f)$ \\ 
-1 & 1 & 0 & $\sigma(w_{f_x}*1 + w_{f_h}*1+b_f)$& $\sigma(w_{f_x} + w_{f_h}+b_f)$ \\ 
-\hline
-\end{tabular}\end{center}
+Let's make $f_t$ always zero as we don't need the cell state, only $h_{t-1}$. This makes w_fx, w_fh=0 and b_f=-10
+
 
 \begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
 \hline
@@ -98,12 +90,12 @@ $h_{t-1}$ & $x_t$ & $h_t$ & $g_t$ & $g_t$ \\
 
 \begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
 \hline
-$h_{t-1}$ & $x_t$ & $h_t$ & $c_t= f_t c_{t-1} + i_t g_t$ \\
+$h_{t-1}$ & $x_t$ & $h_t$ & $c_t= 0* c_{t-1} + i_t g_t$ \\
 \hline
-0 & 0 & 0 & $\sigma(b_f)c_{t-1} + \sigma(b_i)\tanh(b_g)$ \\ 
-0 & 1 & 1 & $\sigma(w_{f_x}+b_f)c_{t-1} + \sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g)$ \\ 
-1 & 0 & 1 & $\sigma(w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g)$\\ 
-1 & 1 & 0 & $\sigma(w_{f_x}+w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g)$ \\ 
+0 & 0 & 0 & $\sigma(b_i)\tanh(b_g)$ \\ 
+0 & 1 & 1 & $\sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g)$ \\ 
+1 & 0 & 1 & $\sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g)$\\ 
+1 & 1 & 0 & $\sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g)$ \\ 
 \hline
 \end{tabular}\end{center}
 
@@ -111,39 +103,52 @@ $h_{t-1}$ & $x_t$ & $h_t$ & $c_t= f_t c_{t-1} + i_t g_t$ \\
 \hline
 $h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
 \hline
-0 & 0 & 0 & $0=\sigma(b_o)\tanh(\sigma(b_f)c_{t-1} + \sigma(b_i)\tanh(b_g))$ \\ 
-0 & 1 & 1 & $1=\sigma(w_{o_x}+b_o)\tanh(\sigma(w_{f_x}+b_f)c_{t-1} + \sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g))$ \\ 
-1 & 0 & 1 & $1=\sigma(w_{o_h}+b_o)\tanh(\sigma(w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g))$\\ 
-1 & 1 & 0 & \shortstack { $0=\sigma(w_{o_x}+w_{o_h}+b_o)\tanh(\sigma(w_{f_x}+w_{f_h}+b_f)c_{t-1}$ \\ $ + \sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g))$} \\ 
+0 & 0 & 0 & $0=\sigma(b_o)\tanh(\sigma(b_i)\tanh(b_g))$ \\ 
+0 & 1 & 1 & $1=\sigma(w_{o_x}+b_o)\tanh(\sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g))$ \\ 
+1 & 0 & 1 & $1=\sigma(w_{o_h}+b_o)\tanh(\sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g))$\\ 
+1 & 1 & 0 & { $0=\sigma(w_{o_x}+w_{o_h}+b_o)\tanh(\sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g))$} \\ 
 \hline
 \end{tabular}\end{center}
 
-Here we have a set of four equations with 12 unknowns so we'll have to reduce the values. Start by setting $o_t=1$  which is accomplished by setting $w_{o_x}$ and $w_{o_h}$ to 0 and $b_o$ "large", say 10. Also we'll set $f_t=1$ using similar values for its weights and bias term. This results in the following:
+We need $\sigma(b_o)\tanh(\sigma(b_i)\tanh(b_g))=0$ so we'll set $b_0=-10$ 
 
 \begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
 \hline
 $h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
 \hline
-0 & 0 & 0 & $0=1*\tanh(1*c_{t-1} + \sigma(b_i))\tanh(b_g))$ \\ 
-0 & 1 & 1 & $1=1*\tanh(1*c_{t-1} + \sigma(w_{i_x}+b_i))\tanh(w_{g_x}+b_g))$ \\ 
-1 & 0 & 1 & $1=1*\tanh(1*c_{t-1} + \sigma(w_{i_h}+b_i))\tanh(w_{g_h}+b_g))$\\ 
-1 & 1 & 0 &  $0=1*\tanh(1*c_{t-1}$  $ + \sigma(w_{i_x}+w_{i_h}+b_i))\tanh(w_{g_x} + w_{g_h}+b_g))$ \\ 
+0 & 0 & 0 & $0=\sigma(-10)\tanh(\sigma(b_i)\tanh(b_g))$ \\ 
+0 & 1 & 1 & $1=\sigma(w_{o_x}-10)\tanh(\sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g))$ \\ 
+1 & 0 & 1 & $1=\sigma(w_{o_h}-10)\tanh(\sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g))$\\ 
+1 & 1 & 0 & { $0=\sigma(w_{o_x}+w_{o_h}-10)\tanh(\sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g))$} \\ 
 \hline
 \end{tabular}\end{center}
 
-Now we need to find values for $i_t$ and $g_t$. For the first row above we need either $\tanh(1*c_{t-1} + \sigma(b_i))$ or $\tanh(b_g))$ to be zero. Setting $b_i$ to -10 will accomplish this. Which leaves us with the following for the second and third rows: 
- 
 
-\begin{equation}
-\tanh(c_{t-1} + \sigma(w_{i_h}-10))\tanh(w_{g_h}+b_g)=\tanh(c_{t-1} + \sigma(w_{i_x}-10))\tanh(w_{g_x}+b_g))
-\end{equation}
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
+\hline
+0 & 0 & 0 & $0=\sigma(-10)\tanh(\sigma(0)\tanh(0))$ \\ 
+0 & 1 & 1 & $1=\sigma(20-10)\tanh(\sigma(10+0)\tanh(10+0))$ \\ 
+1 & 0 & 1 & $1=\sigma(20-10)\tanh(\sigma(10+0)\tanh(10+0))$\\ 
+1 & 1 & 0 & { $0=\sigma(20+20-10)\tanh(\sigma(10+10+0)\tanh(10 +10 +0))$} \\ 
+\hline
+\end{tabular}\end{center}
 
-The only way to satisfy this is with:
+\begin{comment}
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
+\hline
+0 & 0 & 0 & $0=\sigma(-10)\tanh(\sigma(0)\tanh(0))$ \\ 
+0 & 1 & 1 & $1=\sigma(20-10)\tanh(\sigma(10+0)\tanh(10+0))$ \\ 
+1 & 0 & 1 & $1=\sigma(20-10)\tanh(\sigma(10+0)\tanh(10+0))$\\ 
+1 & 1 & 0 & { $0=\sigma(20+20-10)\tanh(\sigma(10+10+0)\tanh(10 +10 +0))$} \\ 
+\hline
+\end{tabular}\end{center}
 
-\begin{equation}\tanh(c_{t-1} + \sigma(w_{i_h}-10))=1\end{equation}
-\begin{equation}\tanh(w_{g_h}+b_g)=1\end{equation}
-\begin{equation}\tanh(c_{t-1} + \sigma(w_{i_x}-10))=1\end{equation}
-\begin{equation}\tanh(w_{g_x}+b_g))=1\end{equation}
+\end{comment}
+
 
 
 \end{document}
