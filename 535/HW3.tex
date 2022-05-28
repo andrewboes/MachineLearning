@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{comment}
 
 \usepackage{amsmath}% http://ctan.org/pkg/amsmath
 
@@ -50,47 +51,99 @@ $h_{t-1}$ & $x_t$ & $h_t$ \\
 \hline
 \end{tabular}\end{center}
 
-We'll set $f_t=1$ to remember all of $c_{t-1}$. The sigmoid function returns one for "very" large values so we'll set $b_f$ to 1000 and the other parameters of $f_t$ to zero. Also, we want $o_t$ to be one so we'll set the parameters similar to $f_t$. This leaves the parameters of $i_t$ and $g_t$, $w_{ix}$, $w_{i_h}$, $b_i$, $w_{g_x}$, $w_{g_h}$, and $b_g$.
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $f_t$ & $f_t$ \\
+\hline
+0 & 0 & 0 & $\sigma(w_{f_x}*0 + w_{f_h}*0+b_f)$ &$\sigma(b_f)$ \\ 
+0 & 1 & 1 & $\sigma(w_{f_x}*1 + w_{f_h}*0+b_f)$ & $\sigma(w_{f_x}+b_f)$ \\ 
+1 & 0 & 1 & $\sigma(w_{f_x}*0 + w_{f_h}*1+b_f)$ & $\sigma(w_{f_h}+b_f)$ \\ 
+1 & 1 & 0 & $\sigma(w_{f_x}*1 + w_{f_h}*1+b_f)$& $\sigma(w_{f_x} + w_{f_h}+b_f)$ \\ 
+\hline
+\end{tabular}\end{center}
 
-Using the first row of the above table and our values for $f_t$ and $o_t$ we have:
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $i_t$ & $i_t$ \\
+\hline
+0 & 0 & 0 & $\sigma(w_{i_x}*0 + w_{i_h}*0+b_i)$ &$\sigma(b_i)$ \\ 
+0 & 1 & 1 & $\sigma(w_{i_x}*1 + w_{i_h}*0+b_i)$ & $\sigma(w_{i_x}+b_i)$ \\ 
+1 & 0 & 1 & $\sigma(w_{i_x}*0 + w_{i_h}*1+b_i)$ & $\sigma(w_{i_h}+b_i)$ \\ 
+1 & 1 & 0 & $\sigma(w_{i_x}*1 + w_{i_h}*1+b_i)$& $\sigma(w_{i_x} + w_{i_h}+b_i)$ \\ 
+\hline
+\end{tabular}\end{center}
 
-\begin{align*}
-    h_t &= o_t\tanh(c_t) \\
-  0 &= 0*\tanh(c_t) \\
-  0&= 0*\tanh(1 * 0 + i_t g_t) \\
-  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= 0
-\end{align*}
-
-Second row:
-
-\begin{align*}
-    h_t &= o_t\tanh(c_t) \\
-  0 &= 1*\tanh(c_t) \\
-  0&= 1*\tanh(1 * 0 + i_t g_t) \\
-  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= 0
-\end{align*}
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $o_t$ & $o_t$ \\
+\hline
+0 & 0 & 0 & $\sigma(w_{o_x}*0 + w_{o_h}*0+b_o)$ &$\sigma(b_o)$ \\ 
+0 & 1 & 1 & $\sigma(w_{o_x}*1 + w_{o_h}*0+b_o)$ & $\sigma(w_{o_x}+b_o)$ \\ 
+1 & 0 & 1 & $\sigma(w_{o_x}*0 + w_{o_h}*1+b_o)$ & $\sigma(w_{o_h}+b_o)$ \\ 
+1 & 1 & 0 & $\sigma(w_{o_x}*1 + w_{o_h}*1+b_o)$& $\sigma(w_{o_x} + w_{o_h}+b_o)$ \\ 
+\hline
+\end{tabular}\end{center}
 
 
-Third row:
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $g_t$ & $g_t$ \\
+\hline
+0 & 0 & 0 & $\tanh(w_{g_x}*0 + w_{g_h}*0+b_g) $ &$\tanh(b_g)$ \\ 
+0 & 1 & 1 &  $\tanh(w_{g_x}*1 + w_{g_h}*0+b_g) $ & $\tanh(w_{g_x}+b_g)$ \\ 
+1 & 0 & 1 & $\tanh(w_{g_x}*0 + w_{g_h}*1+b_g)$ & $\tanh(w_{g_h}+b_g)$ \\ 
+1 & 1 & 0 & $\tanh(w_{g_x}*1 + w_{g_h}*1+b_o)$& $\tanh(w_{g_x} + w_{g_h}+b_g)$ \\ 
+\hline
+\end{tabular}\end{center}
 
-\begin{align*}
-    h_t &= o_t\tanh(c_t) \\
-  1 &= 0*\tanh(c_t) \\
-  1 &= 0*\tanh(1 * 0 + i_t g_t) \\
-  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= (large)
-\end{align*}
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $c_t= f_t c_{t-1} + i_t g_t$ \\
+\hline
+0 & 0 & 0 & $\sigma(b_f)c_{t-1} + \sigma(b_i)\tanh(b_g)$ \\ 
+0 & 1 & 1 & $\sigma(w_{f_x}+b_f)c_{t-1} + \sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g)$ \\ 
+1 & 0 & 1 & $\sigma(w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g)$\\ 
+1 & 1 & 0 & $\sigma(w_{f_x}+w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g)$ \\ 
+\hline
+\end{tabular}\end{center}
 
-Fourth row:
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
+\hline
+0 & 0 & 0 & $0=\sigma(b_o)\tanh(\sigma(b_f)c_{t-1} + \sigma(b_i)\tanh(b_g))$ \\ 
+0 & 1 & 1 & $1=\sigma(w_{o_x}+b_o)\tanh(\sigma(w_{f_x}+b_f)c_{t-1} + \sigma(w_{i_x}+b_i)\tanh(w_{g_x}+b_g))$ \\ 
+1 & 0 & 1 & $1=\sigma(w_{o_h}+b_o)\tanh(\sigma(w_{f_h}+b_f)c_{t-1} + \sigma(w_{i_h}+b_i)\tanh(w_{g_h}+b_g))$\\ 
+1 & 1 & 0 & \shortstack { $0=\sigma(w_{o_x}+w_{o_h}+b_o)\tanh(\sigma(w_{f_x}+w_{f_h}+b_f)c_{t-1}$ \\ $ + \sigma(w_{i_x}+w_{i_h}+b_i)\tanh(w_{g_x} + w_{g_h}+b_g))$} \\ 
+\hline
+\end{tabular}\end{center}
 
-\begin{align*}
-    h_t &= o_t\tanh(c_t) \\
-  1 &= 1*\tanh(c_t) \\
-  1 &= 1*\tanh(1 * 0 + i_t g_t) \\
-  \llap{$\rightarrow$\hspace{50pt}} i_t g_t &= (large)
-\end{align*}
+Here we have a set of four equations with 12 unknowns so we'll have to reduce the values. Start by setting $o_t=1$  which is accomplished by setting $w_{o_x}$ and $w_{o_h}$ to 0 and $b_o$ "large", say 10. Also we'll set $f_t=1$ using similar values for its weights and bias term. This results in the following:
 
-Letting $w_{i_h}=-.5$, $b_i=-1000$, $w_{g_x}=1.5$, $w_{g_h}=-2000$, and $b_g=1000$
+\begin{center}\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+$h_{t-1}$ & $x_t$ & $h_t$ & $h_t = o_t\tanh(c_t)$ \\
+\hline
+0 & 0 & 0 & $0=1*\tanh(1*c_{t-1} + \sigma(b_i))\tanh(b_g))$ \\ 
+0 & 1 & 1 & $1=1*\tanh(1*c_{t-1} + \sigma(w_{i_x}+b_i))\tanh(w_{g_x}+b_g))$ \\ 
+1 & 0 & 1 & $1=1*\tanh(1*c_{t-1} + \sigma(w_{i_h}+b_i))\tanh(w_{g_h}+b_g))$\\ 
+1 & 1 & 0 &  $0=1*\tanh(1*c_{t-1}$  $ + \sigma(w_{i_x}+w_{i_h}+b_i))\tanh(w_{g_x} + w_{g_h}+b_g))$ \\ 
+\hline
+\end{tabular}\end{center}
 
+Now we need to find values for $i_t$ and $g_t$. For the first row above we need either $\tanh(1*c_{t-1} + \sigma(b_i))$ or $\tanh(b_g))$ to be zero. Setting $b_i$ to -10 will accomplish this. Which leaves us with the following for the second and third rows: 
+ 
+
+\begin{equation}
+\tanh(c_{t-1} + \sigma(w_{i_h}-10))\tanh(w_{g_h}+b_g)=\tanh(c_{t-1} + \sigma(w_{i_x}-10))\tanh(w_{g_x}+b_g))
+\end{equation}
+
+The only way to satisfy this is with:
+
+\begin{equation}\tanh(c_{t-1} + \sigma(w_{i_h}-10))=1\end{equation}
+\begin{equation}\tanh(w_{g_h}+b_g)=1\end{equation}
+\begin{equation}\tanh(c_{t-1} + \sigma(w_{i_x}-10))=1\end{equation}
+\begin{equation}\tanh(w_{g_x}+b_g))=1\end{equation}
 
 
 \end{document}
