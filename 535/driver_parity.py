@@ -33,17 +33,15 @@ def main():
   
     logging.info("Building model")
     input_size = 2 #number of features
-    hidden_size = 5 #number of features in hidden state
+    hidden_size = 1 #number of features in hidden state
     num_layers = 1 #number of stacked lstm layers
-    num_classes = 1 #number of output classes 
     maximum_training_sequence_length = 5
     
     train = Parity(split='train', max_length=maximum_training_sequence_length)
     train_loader = DataLoader(train, batch_size=100, shuffle=True, collate_fn=pad_collate)
         
-    model = ParityLSTM(hidden_size, num_classes, num_layers, input_size)
-    model.to(torch.device("cpu"))   
-    
+    model = ParityLSTM(input_size, hidden_size, num_layers)
+    model.to(torch.device("cpu"))
     
     logging.info("Model parameter info")
     for name, value in model.named_parameters(recurse=True):
@@ -67,24 +65,20 @@ def main():
 
 # Implement a LSTM model for the parity task. 
 # Initial code from this tutorial: https://cnvrg.io/pytorch-lstm/
-
-
 class ParityLSTM(torch.nn.Module) :
 
     # __init__ builds the internal components of the model (presumably an LSTM and linear layer for classification)
     # The LSTM should have hidden dimension equal to hidden_dim
-
-    def __init__(self, hidden_size, num_classes, num_layers, input_size) :
+    
+    def __init__(self, input_size, hidden_size, num_layers) :
         super().__init__()
-        self.num_classes = num_classes #number of classes
-        self.num_layers = num_layers #number of layers
-        self.input_size = input_size #input size
-        self.hidden_size = hidden_size #hidden state
-
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True) #lstm
-        self.fc_1 =  nn.Linear(hidden_size, num_classes) #fully connected 1
+        self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True) #lstm
+        self.fc_1 =  nn.Linear(hidden_size, input_size) #fully connected 1
+        
+        #initial hidden and cell state values
+        self.hiddenState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
+        self.cellState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
                 
-        self.embed = nn.Embedding(self.input_size, self.input_size)
     
     # forward runs the model on an B x max_length x 1 tensor and outputs a B x 2 tensor representing a score for 
     # even/odd parity for each element of the batch
@@ -99,29 +93,15 @@ class ParityLSTM(torch.nn.Module) :
     #   out -- a batch_size x 2 tensor of scores for even/odd parity    
 
     def forward(self, x, s):
-# =============================================================================
-#       si = torch.tensor(s) - 1 #zero indexing
-#       rs = torch.arange(0, x.shape[0]) # to index the batch dim
-# 
-#       ones_i_want = out[rs, si, :]
-# =============================================================================
+      assert len(s) == x.size()[0] #test to ensure we're using the right shapes
       
+      hiddenState = self.hiddenState.unsqueeze(1).expand(-1, len(s), -1) # update hidden and cell states
+      cellState = self.cellState.unsqueeze(1).expand(-1, len(s), -1) # update hidden and cell states
       
-      x = self.embed(x.to(torch.int64))
-      #print(x.size()) #torch.Size([100, 10])
-      #print(len(s))
-      hiddenState = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #torch.Size([12, 100, 2])  
-      cellState = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size))  #torch.Size([12, 100, 2])
-      
-      #print(hiddenState.size(), cellState.size())
-      
-      # Propagate input through LSTM
-      output, (hn, cn) = self.lstm(x, (hiddenState, cellState)) #lstm with input, hidden, and internal state
-      hn = hn.view(-1, self.hidden_size) #reshaping the data for Dense layer next
-      #print(hn)
-      out = self.fc_1(hn)
-      #print(out) #torch.Size([1600, 1])
-      return hn
+      x = x.unsqueeze(-1) # extend a feature dimension for x
+      xPacked = pack_padded_sequence(x, s, batch_first=True, enforce_sorted=False)
+      output, (hn, cn) = self.lstm(xPacked, (hiddenState, cellState)) # take the last state from h_t, skip the unpack operation on the output
+      return F.softmax(self.fc_1(hn[-1]), dim=-1)
 
     def __str__(self):
         return "LSTM-"+str(self.hidden_size)
@@ -214,7 +194,6 @@ def train_model(model, train_loader, epochs=2000, lr=0.003):
 
         # for each batch in the dataset
         for j, (x, y, l) in enumerate(train_loader):
-
             # predict the parity from our model
             y_pred = model(x, l)
             #print(y_pred.size()) #torch.Size([1600, 1])
