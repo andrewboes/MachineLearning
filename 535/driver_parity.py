@@ -71,13 +71,13 @@ class ParityLSTM(torch.nn.Module) :
     # The LSTM should have hidden dimension equal to hidden_dim
     
     def __init__(self, input_size, hidden_size, num_layers) :
-        super().__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True) #lstm
-        self.fc_1 =  nn.Linear(hidden_size, input_size) #fully connected 1
-        
-        #initial hidden and cell state values
-        self.hiddenState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
-        self.cellState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
+      super().__init__()
+      self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True) #lstm
+      self.fc_1 =  nn.Linear(hidden_size, input_size) #fully connected 1
+      
+      #initial hidden and cell state values
+      self.hiddenState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
+      self.cellState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
                 
     
     # forward runs the model on an B x max_length x 1 tensor and outputs a B x 2 tensor representing a score for 
