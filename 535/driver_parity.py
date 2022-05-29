@@ -33,7 +33,7 @@ def main():
   
     logging.info("Building model")
     input_size = 1 #number of features
-    hidden_size = 1 #number of features in hidden state
+    hidden_size = 2 #number of features in hidden state
     num_layers = 1 #number of stacked lstm layers
     maximum_training_sequence_length = 5
     
@@ -72,6 +72,7 @@ class ParityLSTM(torch.nn.Module) :
     
     def __init__(self, input_size, hidden_size, num_layers) :
       super().__init__()
+      self.hidden_size = hidden_size
       self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True) #lstm
       self.fc_1 =  nn.Linear(hidden_size, 2) #fully connected 1
       
@@ -95,13 +96,13 @@ class ParityLSTM(torch.nn.Module) :
     def forward(self, x, s):
       assert len(s) == x.size()[0] #test to ensure we're using the right shapes
       
-      hiddenState = self.hiddenState.unsqueeze(1).expand(-1, len(s), -1) # update hidden and cell states
-      cellState = self.cellState.unsqueeze(1).expand(-1, len(s), -1) # update hidden and cell states
+      hiddenState = self.hiddenState.unsqueeze(1).expand(-1, len(s), -1) # update hidden dim
+      cellState = self.cellState.unsqueeze(1).expand(-1, len(s), -1) # update cell dim
       
-      x = x.unsqueeze(-1) # extend a feature dimension for x
-      xPacked = pack_padded_sequence(x, s, batch_first=True, enforce_sorted=False)
-      output, (hn, cn) = self.lstm(xPacked, (hiddenState, cellState)) # take the last state from h_t, skip the unpack operation on the output
-      return F.softmax(self.fc_1(hn[-1]), dim=-1)
+      x = x.unsqueeze(-1) 
+      xPacked = pack_padded_sequence(x, s, batch_first=True, enforce_sorted=False) #pack padded values of x 
+      output, (hidden, cell) = self.lstm(xPacked, (hiddenState, cellState)) 
+      return F.softmax(self.fc_1(hidden[-1]), dim=-1)
 
     def __str__(self):
         return "LSTM-"+str(self.hidden_size)
@@ -172,7 +173,7 @@ def pad_collate(batch):
       return xx_pad, yy, x_lens
 
 # Basic training loop for cross entropy loss
-def train_model(model, train_loader, epochs=2000, lr=0.003):
+def train_model(model, train_loader, epochs=1000, lr=0.003):
     # Define a cross entropy loss function
     crit = torch.nn.CrossEntropyLoss()
 
