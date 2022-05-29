@@ -41,9 +41,15 @@ def main():
     train = Parity(split='train', max_length=maximum_training_sequence_length)
     train_loader = DataLoader(train, batch_size=100, shuffle=True, collate_fn=pad_collate)
         
-    seq_length = len(train)
     model = ParityLSTM(hidden_size, num_classes, num_layers, input_size)
-    model.to(torch.device("cpu"))
+    model.to(torch.device("cpu"))   
+    
+    
+    logging.info("Model parameter info")
+    for name, value in model.named_parameters(recurse=True):
+        if value.requires_grad:
+            print(name, value.size())#parameter meta data
+            #print(value.data)#parameter values
     
     logging.info("Training model")
     train_model(model, train_loader)
@@ -209,12 +215,6 @@ def train_model(model, train_loader, epochs=2000, lr=0.003):
         # for each batch in the dataset
         for j, (x, y, l) in enumerate(train_loader):
 
-            # push them to the GPU if we are using one
-# =============================================================================
-#             x = x.to(dev)
-#             y = y.to(dev)
-# =============================================================================
-
             # predict the parity from our model
             y_pred = model(x, l)
             #print(y_pred.size()) #torch.Size([1600, 1])
@@ -244,10 +244,6 @@ def validation_metrics (model, loader):
     sum_loss = 0.0
     crit = torch.nn.CrossEntropyLoss()
     for i, (x, y, l) in enumerate(loader):
-# =============================================================================
-#         x = x.to(dev)
-#         y= y.to(dev)
-# =============================================================================
         y_hat = model(x, l)
 
         loss = crit(y_hat, y)
