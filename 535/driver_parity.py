@@ -27,28 +27,25 @@ matplotlib.use("Agg")
 random.seed(42)
 torch.manual_seed(42)
 
-# Determine if a GPU is available for use, define as global variable
-dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
  
 # Main Driver Loop
 def main():
+  
+    logging.info("Building model")
     input_size = 2 #number of features
-    hidden_size = 64 #number of features in hidden state
-    num_layers = 1 #number of stacked lstm layers
+    hidden_size = 5 #number of features in hidden state
+    num_layers = 16 #number of stacked lstm layers
     num_classes = 1 #number of output classes 
-    num_classes = 1 #number of output classes 
-
-
-    logging.info("Training model")
-    maximum_training_sequence_length = 5
+    maximum_training_sequence_length = 10
+    
     train = Parity(split='train', max_length=maximum_training_sequence_length)
-    train_loader = DataLoader(train, batch_size=100, shuffle=True)#, collate_fn=pad_collate)
+    train_loader = DataLoader(train, batch_size=100, shuffle=True, collate_fn=pad_collate)
         
     seq_length = len(train)
-    model = ParityLSTM(hidden_size, num_classes, num_layers, input_size, seq_length)
-    model.to(dev) # move to GPU if cuda is enabled
+    model = ParityLSTM(hidden_size, num_classes, num_layers, input_size)
+    model.to(torch.device("cpu"))
     
+    logging.info("Training model")
     train_model(model, train_loader)
 
 
@@ -63,7 +60,7 @@ def main():
 ######################################################################
 
 # Implement a LSTM model for the parity task. 
-# Tutorial: https://cnvrg.io/pytorch-lstm/
+# Initial code from this tutorial: https://cnvrg.io/pytorch-lstm/
 
 
 class ParityLSTM(torch.nn.Module) :
@@ -71,21 +68,17 @@ class ParityLSTM(torch.nn.Module) :
     # __init__ builds the internal components of the model (presumably an LSTM and linear layer for classification)
     # The LSTM should have hidden dimension equal to hidden_dim
 
-    def __init__(self, hidden_size, num_classes, num_layers, input_size, seq_length) :
+    def __init__(self, hidden_size, num_classes, num_layers, input_size) :
         super().__init__()
         self.num_classes = num_classes #number of classes
         self.num_layers = num_layers #number of layers
         self.input_size = input_size #input size
         self.hidden_size = hidden_size #hidden state
-        self.seq_length = seq_length #sequence length
 
-        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
-                          num_layers=num_layers, batch_first=True) #lstm
-        self.fc_1 =  nn.Linear(hidden_size, 128) #fully connected 1
-        self.fc = nn.Linear(128, num_classes) #fully connected last layer
-
-        self.relu = nn.ReLU()
-
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True) #lstm
+        self.fc_1 =  nn.Linear(hidden_size, num_classes) #fully connected 1
+                
+        self.embed = nn.Embedding(self.embed_len, self.input_size)
     
     # forward runs the model on an B x max_length x 1 tensor and outputs a B x 2 tensor representing a score for 
     # even/odd parity for each element of the batch
@@ -99,17 +92,29 @@ class ParityLSTM(torch.nn.Module) :
     # Output:
     #   out -- a batch_size x 2 tensor of scores for even/odd parity    
 
-    def forward(self, x):#, s):
-        h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #hidden state
-        c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #internal state
-        # Propagate input through LSTM
-        output, (hn, cn) = self.lstm(x, (h_0, c_0)) #lstm with input, hidden, and internal state
-        hn = hn.view(-1, self.hidden_size) #reshaping the data for Dense layer next
-        out = self.relu(hn)
-        out = self.fc_1(out) #first Dense
-        out = self.relu(out) #relu
-        out = self.fc(out) #Final Output
-        return out
+    def forward(self, x, s):
+# =============================================================================
+#       si = torch.tensor(s) - 1 #zero indexing
+#       rs = torch.arange(0, x.shape[0]) # to index the batch dim
+# 
+#       ones_i_want = out[rs, si, :]
+# =============================================================================
+      
+      
+      print(x.size()) #torch.Size([100, 10])
+      print(len(s))
+      x = self.embed(x.to(torch.int64))
+      hiddenState = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)) #torch.Size([12, 100, 2])  
+      cellState = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size))  #torch.Size([12, 100, 2])
+      
+      print(hiddenState.size(), cellState.size())
+      
+      # Propagate input through LSTM
+      output, (hn, cn) = self.lstm(x, (hiddenState, cellState)) #lstm with input, hidden, and internal state
+      hn = hn.view(-1, self.hidden_size) #reshaping the data for Dense layer next
+      out = self.fc_1(hn)
+      print(out)
+      return out
 
     def __str__(self):
         return "LSTM-"+str(self.hidden_dim)
@@ -175,7 +180,7 @@ def pad_collate(batch):
       x_lens = [len(x) for x in xx]
 
       xx_pad = pad_sequence(xx, batch_first=True, padding_value=0)
-      yy = torch.LongTensor(yy)
+      yy = torch.tensor(yy).long()
 
       return xx_pad, yy, x_lens
 
@@ -204,8 +209,10 @@ def train_model(model, train_loader, epochs=2000, lr=0.003):
         for j, (x, y, l) in enumerate(train_loader):
 
             # push them to the GPU if we are using one
-            x = x.to(dev)
-            y = y.to(dev)
+# =============================================================================
+#             x = x.to(dev)
+#             y = y.to(dev)
+# =============================================================================
 
             # predict the parity from our model
             y_pred = model(x, l)
@@ -235,8 +242,10 @@ def validation_metrics (model, loader):
     sum_loss = 0.0
     crit = torch.nn.CrossEntropyLoss()
     for i, (x, y, l) in enumerate(loader):
-        x = x.to(dev)
-        y= y.to(dev)
+# =============================================================================
+#         x = x.to(dev)
+#         y= y.to(dev)
+# =============================================================================
         y_hat = model(x, l)
 
         loss = crit(y_hat, y)
