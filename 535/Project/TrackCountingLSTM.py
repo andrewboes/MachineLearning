@@ -40,8 +40,7 @@ maxSamplesPerTimeStep = 4
 def main():
   train = Lines(split='train')
   print(train.data)
-  
-
+    
 def getLines(numLines):
   noise = np.random.normal(0,1,100)
   lines = []
@@ -56,36 +55,41 @@ def getLines(numLines):
       line.append([x_t, (x_t*m + b)-noise[j]])
     lines.append(line)
   return lines
-
+  
 class Lines(Dataset):
   
-  def __init__(self,split="train", max_length=4):
+  def __init__(self,split="train", max_length=5):
     lines = getLines(max_length)
-    print(lines)
-    currentLineIndex = [-1,-1]
     self.data = {}
     self.data[0] = []
+    currentLineIndex = 0
+    currentPointIndex = 0
     for i in range(1, max_length*maxLineSamples):
-      self.data[i]=[]
-      currentLineIndex[1] = currentLineIndex[1] + 1
-      currentLineIndex[0] = -1
-      for j in range(0, 1):
-        currentLineIndex[0] += 1
-        if len(lines)>currentLineIndex[0] and len(lines[currentLineIndex[0]]) > currentLineIndex[1]: #is there entry
-          pointToAdd = lines[currentLineIndex[0]][currentLineIndex[1]]
+      self.data[i] = [] #point, current count
+      if len(lines) > currentLineIndex:
+        if len(lines[currentLineIndex]) > currentPointIndex:
+          pointToAdd = [lines[currentLineIndex][currentPointIndex], currentLineIndex + 1]
           if len(self.data[i]) == 0:
-            self.data[i] = [pointToAdd]  
+            self.data[i] = pointToAdd
           else:
             self.data[i].append(pointToAdd)
-      
-    
+          currentPointIndex = currentPointIndex + 1
+        else:
+          currentLineIndex = currentLineIndex + 1
+          currentPointIndex = 0
+          self.data[i] = [[], currentLineIndex]  
+      else:
+        self.data[i] = [[], len(lines)]  
 
   def __len__(self):
       return len(self.data)
 
   def __getitem__(self, idx):
       
-      x = self.data[idx]
-      y = x.sum() % 2
+      x = self.data[idx][0]
+      y = self.data[idx][1]
       return x,y 
+
+
+
 main()
