@@ -30,8 +30,8 @@ torch.manual_seed(42)
 
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" #hack
-x = 1152
-y = 720
+imageX = 1152
+imageY = 720
 maxSlope = .25
 maxLineSamples = 8
 minLineSamples = 4
@@ -62,7 +62,7 @@ def main():
 # =============================================================================
   train_loader = DataLoader(train, batch_size=1, shuffle=True, collate_fn=pad_collate)
       
-  model = ParityLSTM(input_size, hidden_size, num_layers,110)
+  model = ParityLSTM(input_size, hidden_size, num_layers,11)
   model.to(torch.device("cpu"))
   
   logging.info("Model parameter info")
@@ -122,14 +122,14 @@ def getLines(numLines):
   noise = np.random.normal(0,1,100)
   lines = []
   for i in range(0, numLines):
-    b = randrange(200, y)
+    b = randrange(200, imageY)
     m = ((randrange(maxSlope * 100 * 2))/100)-maxSlope
     numSamples = randrange(minLineSamples,maxLineSamples)
-    x_0 = x/numSamples
+    x_0 = imageX/numSamples
     line = []
     for j in range(1, numSamples):
       x_t = x_0*(j+1)+noise[j]*2
-      line.append(([float(x_t), float((x_t*m + b)-noise[j]*3)]))
+      line.append(([float(x_t)/imageX, float((x_t*m + b)-noise[j]*3)/imageY]))
     lines.append(line)
   return lines
   
@@ -181,9 +181,24 @@ def pad_collate(batch):
       return xx_pad, yy, x_lens
 
 # Basic training loop for cross entropy loss
-def train_model(model, train_loader, epochs=1000, lr=0.003):
+def train_model(model, train_loader, epochs=1000, lr=0.0003):
+  
+    allYs = []
+    for j, (x, y, l) in enumerate(train_loader):
+      allYs.append(int(y.squeeze()))
+    weights = [1-(np.count_nonzero(allYs == 0)/len(allYs)),
+               1-(np.count_nonzero(allYs == 1)/len(allYs)),
+               1-(np.count_nonzero(allYs == 2)/len(allYs)),
+               1-(np.count_nonzero(allYs == 3)/len(allYs)),
+               1-(np.count_nonzero(allYs == 4)/len(allYs)),
+               1-(np.count_nonzero(allYs == 5)/len(allYs)),
+               1-(np.count_nonzero(allYs == 6)/len(allYs)),
+               1-(np.count_nonzero(allYs == 7)/len(allYs)),
+               1-(np.count_nonzero(allYs == 8)/len(allYs)),
+               1-(np.count_nonzero(allYs == 9)/len(allYs)),
+               1-(np.count_nonzero(allYs == 10)/len(allYs))               ]
     # Define a cross entropy loss function
-    crit = torch.nn.CrossEntropyLoss()
+    crit = torch.nn.CrossEntropyLoss(weight=torch.FloatTensor(weights))
 
     # Collect all the learnable parameters in our model and pass them to an optimizer
     parameters = filter(lambda p: p.requires_grad, model.parameters())
