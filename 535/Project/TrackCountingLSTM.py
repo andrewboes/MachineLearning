@@ -50,8 +50,8 @@ def main():
   
   logging.info("Building model")
   input_size = 6 #number of features
-  hidden_size = 3 #number of features in hidden state
-  num_layers = 5 #number of stacked lstm layers
+  hidden_size = 100 #number of features in hidden state
+  num_layers = 100 #number of stacked lstm layers
   maximum_training_sequence_length = 5
   
   train = Lines(split='train')  
@@ -60,9 +60,9 @@ def main():
 #   print(train.data[0].size())
 #   print(train.data[1].size())
 # =============================================================================
-  train_loader = DataLoader(train, batch_size=1, shuffle=True)
+  train_loader = DataLoader(train, batch_size=1, shuffle=True, collate_fn=pad_collate)
       
-  model = ParityLSTM(input_size, hidden_size, num_layers)
+  model = ParityLSTM(input_size, hidden_size, num_layers,110)
   model.to(torch.device("cpu"))
   
   logging.info("Model parameter info")
@@ -79,11 +79,11 @@ class ParityLSTM(torch.nn.Module) :
     # __init__ builds the internal components of the model (presumably an LSTM and linear layer for classification)
     # The LSTM should have hidden dimension equal to hidden_dim
     
-    def __init__(self, input_size, hidden_size, num_layers) :
+    def __init__(self, input_size, hidden_size, num_layers, outputSize) :
       super().__init__()
       self.hidden_size = hidden_size
       self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True) #lstm
-      self.fc_1 =  nn.Linear(hidden_size, 2) #fully connected 1
+      self.fc_1 =  nn.Linear(hidden_size, outputSize) #fully connected 1
       
       #initial hidden and cell state values
       self.hiddenState = torch.nn.Parameter(torch.zeros(size=(self.lstm.num_layers, hidden_size)))
@@ -102,15 +102,15 @@ class ParityLSTM(torch.nn.Module) :
     # Output:
     #   out -- a batch_size x 2 tensor of scores for even/odd parity    
 
-    def forward(self, x):
-      #assert len(s) == x.size()[0] #test to ensure we're using the right shapes
+    def forward(self, x, s):
+      assert len(s) == x.size()[0] #test to ensure we're using the right shapes
       
       hiddenState = self.hiddenState.unsqueeze(1)#.expand(-1, len(x), -1) # update hidden dim
       cellState = self.cellState.unsqueeze(1)#.expand(-1, len(x), -1) # update cell dim
-      
       #x = x.unsqueeze(-1) 
-      #xPacked = pack_padded_sequence(x, s, batch_first=True, enforce_sorted=False) #pack padded values of x 
-      output, (hidden, cell) = self.lstm(x, (hiddenState, cellState)) 
+      xPacked = pack_padded_sequence(x, s, batch_first=True, enforce_sorted=False) #pack padded values of x 
+
+      output, (hidden, cell) = self.lstm(xPacked, (hiddenState, cellState)) 
       return F.softmax(self.fc_1(hidden[-1]), dim=-1)
 
     def __str__(self):
@@ -124,7 +124,7 @@ def getLines(numLines):
   for i in range(0, numLines):
     b = randrange(200, y)
     m = ((randrange(maxSlope * 100 * 2))/100)-maxSlope
-    numSamples = 4#randrange(minLineSamples,maxLineSamples)
+    numSamples = randrange(minLineSamples,maxLineSamples)
     x_0 = x/numSamples
     line = []
     for j in range(1, numSamples):
@@ -140,7 +140,7 @@ class Lines(Dataset):
     for k in range(max_length):
       sample=[]  
       runningCount = 0
-      numBoats = 10#randrange(10,30)
+      numBoats = randrange(5,10)
       for i in range(numBoats):
         oneLine = getLines(1)[0]
         runningCount = runningCount + 1
@@ -160,9 +160,14 @@ class Lines(Dataset):
       return len(self.data)
 
   def __getitem__(self, idx):
+    
     t = self.data[idx]
     x = t[:,:-1]
-    y = t[:,-1:][-1].squeeze()/10
+# =============================================================================
+#     x = np.matrix.flatten(np.asarray(x))
+#     x = torch.tensor(x).to(torch.int64)
+# =============================================================================
+    y = t[:,-1:][-1].squeeze()
     return x,y 
 
 # Function to enable batch loader to concatenate binary strings of different lengths and pad them
@@ -197,14 +202,13 @@ def train_model(model, train_loader, epochs=1000, lr=0.003):
         correct = 0
 
         # for each batch in the dataset
-        for j, (x, y) in enumerate(train_loader):
+        for j, (x, y, l) in enumerate(train_loader):
             # predict the parity from our model
-            y_pred = model(x.float())
+            y_pred = model(x.float(), l)
             #print(y_pred.size()) #torch.Size([1600, 1])
             
             # compute the loss with respect to the true labels
-            y = y.type(torch.LongTensor)
-            loss = crit(y_pred, torch.LongTensor(y))
+            loss = crit(y_pred, y)
             
             # zero out the gradients, perform the backward pass, and update
             optimizer.zero_grad()
