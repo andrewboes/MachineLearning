@@ -135,7 +135,7 @@ def getLines(numLines):
   
 class Lines(Dataset):
   
-  def __init__(self,split="train", max_length=50):
+  def __init__(self,split="train", max_length=100):
     self.data = []
     for k in range(max_length):
       sample=[]  
@@ -181,8 +181,9 @@ def pad_collate(batch):
       return xx_pad, yy, x_lens
 
 # Basic training loop for cross entropy loss
-def train_model(model, train_loader, epochs=1000, lr=0.0003):
-  
+def train_model(model, train_loader, epochs=2000, lr=0.0003):
+    bestAcc = -1
+    bestEpoch = -1
     allYs = []
     for j, (x, y, l) in enumerate(train_loader):
       allYs.append(int(y.squeeze()))
@@ -235,7 +236,11 @@ def train_model(model, train_loader, epochs=1000, lr=0.0003):
             correct += (pred == y).float().sum()
             sum_loss += loss.item()*y.shape[0]
             total += y.shape[0]
-        if i % 10 == 0:
+            if correct/total > bestAcc:
+              bestAcc = correct/total
+              bestEpoch = i
+        if i % 100 == 0:
             logging.info("epoch %d train loss %.3f, train acc %.3f" % (i, sum_loss/total, correct/total))#, val_loss, val_acc))
+    print(bestAcc, bestEpoch)
 
 main()
