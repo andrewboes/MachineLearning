@@ -3,23 +3,36 @@ import json
 import torch
 import cv2
 import time
+import torchvision
+from PIL import Image
+
+from torchvision import transforms as T
 vggJsonFile = './via_project_07Jun2022_19h40m26s.json'
 pretrainedTestFolder = './PreTrainedTest/'
 
 def main():
   
-  model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+  #list of models: https://pytorch.org/hub/research-models/compact
+  #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+  model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pretrained=True)
+  #model = torch.hub.load('pytorch/vision:v0.10.0', 'fcn_resnet50', pretrained=True)
+  #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
+  model.eval()
+  transform = T.Compose([T.ToTensor()]) # Defing PyTorch Transform
   
   processedImages = {"records":[]}
   with open(vggJsonFile) as data_file:    
      data = json.load(data_file)
-  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[:100]}
+  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[:1]}
   #for key in data['metadata']:  #loop through meta data, all keys
   for key in testKeys:  #testKeys
     fid = data['metadata'][key]['vid'] #get record id 
     fileName = data['file'][fid]['fname']#get file name
     classRect = data['metadata'][key]['xy'][1:] #get bounding box, first coord is class num always boat
-    processedImages['records'].append(cv2.imread(pretrainedTestFolder + fileName)[..., ::-1])
+    img = Image.open(pretrainedTestFolder + fileName) # Load the image
+    img = img.resize((640,384))
+    myImg = transform(img) # doesn't work for YOLO, comment out
+    processedImages['records'].append(img)
     #processedImageIds.append(key)
 # =============================================================================
 #     pred = model(cv2.imread(pretrainedTestFolder + fileName)[..., ::-1], size=640)  # includes NMS
@@ -36,7 +49,10 @@ def main():
 
 
   t0 = time.time()
-  results = model(processedImages['records'], size=640)  # includes NMS
+  img = torch.randn(1,3,640,384)
+  myImg = myImg.unsqueeze(0)
+  print(myImg.size())
+  features, regression, classification, anchors, segmentation = model(myImg)  # includes NMS
   t1 = time.time()
   print(t1-t0)
     
