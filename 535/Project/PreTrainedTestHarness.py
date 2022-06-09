@@ -4,34 +4,53 @@ import torch
 import cv2
 import time
 import torchvision
-from PIL import Image
 
+from PIL import Image
 from torchvision import transforms as T
+
 vggJsonFile = './via_project_07Jun2022_19h40m26s.json'
 pretrainedTestFolder = './PreTrainedTest/'
 
 def main():
   
   #list of models: https://pytorch.org/hub/research-models/compact
-  #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-  model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pretrained=True)
-  #model = torch.hub.load('pytorch/vision:v0.10.0', 'fcn_resnet50', pretrained=True)
+  #work
+  model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
   #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
+
+
+  #Run but either can't figure out how to compare or don't classify   
+# =============================================================================
+#   feature_extractor = DetrFeatureExtractor.from_pretrained('facebook/detr-resnet-50-panoptic')
+#   model = DetrForSegmentation.from_pretrained('facebook/detr-resnet-50-panoptic')
+#   model = torch.hub.load('datvuthanh/hybridnets', 'hybridnets', pretrained=True)
+#   model = torch.hub.load('pytorch/vision:v0.10.0', 'fcn_resnet50', pretrained=True)
+#   model = Segformer(
+#       dims = (32, 64, 160, 256),      # dimensions of each stage
+#       heads = (1, 2, 5, 8),           # heads of each stage
+#       ff_expansion = (8, 8, 4, 4),    # feedforward expansion factor of each stage
+#       reduction_ratio = (8, 4, 2, 1), # reduction ratio of each stage for efficient attention
+#       num_layers = 2,                 # num layers of each stage
+#       decoder_dim = 256,              # decoder dimension
+#       num_classes = 4                 # number of segmentation classes
+#   )
+# =============================================================================
+  
   model.eval()
   transform = T.Compose([T.ToTensor()]) # Defing PyTorch Transform
   
   processedImages = {"records":[]}
   with open(vggJsonFile) as data_file:    
      data = json.load(data_file)
-  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[:1]}
+  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[:5]}
   #for key in data['metadata']:  #loop through meta data, all keys
   for key in testKeys:  #testKeys
     fid = data['metadata'][key]['vid'] #get record id 
     fileName = data['file'][fid]['fname']#get file name
     classRect = data['metadata'][key]['xy'][1:] #get bounding box, first coord is class num always boat
     img = Image.open(pretrainedTestFolder + fileName) # Load the image
-    img = img.resize((640,384))
-    myImg = transform(img) # doesn't work for YOLO, comment out
+    #img = cv2.imread(pretrainedTestFolder + fileName)[..., ::-1]
+    #img = transform(img) # doesn't work for YOLO, comment out
     processedImages['records'].append(img)
     #processedImageIds.append(key)
 # =============================================================================
@@ -47,12 +66,9 @@ def main():
     #calc dist
   
 
-
+  #img = img.unsqueeze(0) #needed for hybridnets
   t0 = time.time()
-  img = torch.randn(1,3,640,384)
-  myImg = myImg.unsqueeze(0)
-  print(myImg.size())
-  features, regression, classification, anchors, segmentation = model(myImg)  # includes NMS
+  results = model(processedImages['records'])  # includes NMS
   t1 = time.time()
   print(t1-t0)
     
