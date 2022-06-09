@@ -6,6 +6,7 @@ import time
 import torchvision
 import numpy as np
 import statistics
+import math
 
 from PIL import Image
 from torchvision import transforms as T
@@ -52,30 +53,50 @@ def main():
   transform = T.Compose([T.ToTensor()]) # Defing PyTorch Transform
   
   processedImages = {"records":[]}
+  
   accuracies = []
   with open(vggJsonFile) as data_file:    
      data = json.load(data_file)
-  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[216:219]} #1087 two boats
-  #for i, key in enumerate(data['metadata']):  #loop through meta data, all keys
-  for i, key in enumerate(testKeys):  #testKeys
-    fid = data['metadata'][key]['vid'] #get record id 
-    fileName = data['file'][fid]['fname']#get file name
+  fileKeys = {k: data['file'][k] for k in list(data['file'])[1:1000]} #1087 two boats
+  for i, fileKey in enumerate(data['file']):  #loop through meta data, all keys
+  #for i, fileKey in enumerate(fileKeys):  #testKeys
+    #fid = data['metadata'][key]['vid'] #get record id 
+    fileName = data['file'][fileKey]['fname']#get file name
     if fileName == '0037_2022-04-15T07_00_00.349178-07_00.jpg': #miss classified
+      continue
+    if i > 3:
       continue
     if(debugging):
       print(i, fileName)
-    actualRect = data['metadata'][key]['xy'][1:] #get bounding box, first coord is class num always boat
-    actualRect = [actualRect[0], actualRect[1], actualRect[0]+actualRect[2], actualRect[1]+actualRect[3]]
-    actualImage = Image.open(pretrainedTestFolder + fileName) # Load the image
-    #YOLO
-    processedImages['records'].append(actualImage)
-    pred = model([actualImage])
-    for temp in pred.pandas().xyxy:
-      for result in temp.to_numpy():
-        #print(result)
-        if int(result[5]) == 8:
-         pred_box = [float(result[0]), float(result[1]), float(result[2]), float(result[3])]
-         accuracies.append(intersectionOverUnion(np.array(actualRect), np.array(pred_box)))
+    boxesInThisImage = []
+    for metaKey in data['metadata']:
+      #print(data['metadata'][metaKey])
+      if data['metadata'][metaKey]['vid'] == fileKey:
+        actualRect = data['metadata'][metaKey]['xy'][1:] #get bounding box, first coord is class num always boat
+        if(len(actualRect) != 0):
+          boxesInThisImage.append([actualRect[0], actualRect[1], actualRect[0]+actualRect[2], actualRect[1]+actualRect[3]])
+    if len(boxesInThisImage) > 0:
+      actualImage = Image.open(pretrainedTestFolder + fileName) # Load the image
+      predictedBoxes = []
+      #YOLO
+      processedImages['records'].append(actualImage)
+      pred = model([actualImage])
+      for temp in pred.pandas().xyxy:
+        for result in temp.to_numpy():
+          if int(result[5]) == 8:
+           pred_box = [float(result[0]), float(result[1]), float(result[2]), float(result[3])]
+           predictedBoxes.append(pred_box)
+      
+      closestBox = [0,0,0,0]
+      closestDist = 2000
+      for pred_box in predictedBoxes:
+        for act_box in boxesInThisImage:
+          act_cent = (act_box[0]+(act_box[2]/2), act_box[1]+(act_box[3]/2))
+          pred_cent = (pred_box[0]+(pred_box[2]/2), pred_box[1]+(pred_box[3]/2))
+          distance = math.sqrt((pred_cent[0] - act_cent[0])**2 + (pred_cent[1] - act_cent[1])**2) 
+          if distance < closestDist:
+            closestBox = act_box
+        accuracies.append(intersectionOverUnion(np.array(closestBox), np.array(pred_box)))
        
     #non-YOLO    
 # =============================================================================
