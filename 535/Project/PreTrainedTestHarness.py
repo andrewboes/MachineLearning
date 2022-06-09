@@ -13,7 +13,7 @@ from torchvision import transforms as T
 vggJsonFile = './via_project_07Jun2022_19h40m26s.json'
 pretrainedTestFolder = './PreTrainedTest/'
 
-debugging = False
+debugging = True
 
 def main():
   
@@ -21,10 +21,10 @@ def main():
   #list of models: https://pytorch.org/hub/research-models/compact
   #These work
 # =============================================================================
-  #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+  model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
   #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
-  model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True) 
-  #model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True) 
+  #model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True) 
+  #model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True) #doesn't work at all the boxes are waaaay off
 # =============================================================================
 
 
@@ -52,30 +52,51 @@ def main():
   transform = T.Compose([T.ToTensor()]) # Defing PyTorch Transform
   
   processedImages = {"records":[]}
-  accuracy = []
+  accuracies = []
   with open(vggJsonFile) as data_file:    
      data = json.load(data_file)
-  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[2:40]}
-  #for key in data['metadata']:  #loop through meta data, all keys
-  for key in testKeys:  #testKeys
+  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[216:219]} #1087 two boats
+  #for i, key in enumerate(data['metadata']):  #loop through meta data, all keys
+  for i, key in enumerate(testKeys):  #testKeys
     fid = data['metadata'][key]['vid'] #get record id 
     fileName = data['file'][fid]['fname']#get file name
+    if fileName == '0037_2022-04-15T07_00_00.349178-07_00.jpg': #miss classified
+      continue
+    if(debugging):
+      print(i, fileName)
     actualRect = data['metadata'][key]['xy'][1:] #get bounding box, first coord is class num always boat
     actualRect = [actualRect[0], actualRect[1], actualRect[0]+actualRect[2], actualRect[1]+actualRect[3]]
     actualImage = Image.open(pretrainedTestFolder + fileName) # Load the image
-    img = transform(actualImage) # doesn't work for YOLO, comment out
-    processedImages['records'].append(img)
-    #processedImageIds.append(key)
-    pred = model([img])  # includes NMS
-    pred_class = list(pred[0]['labels'].numpy()) # Get the Prediction Score
-    pred_boxes = [[(float(i[0]), float(i[1])), (float(i[2]), float(i[3]))] for i in list(pred[0]['boxes'].detach().numpy())] # Bounding boxes
-    pred_score = list(pred[0]['scores'].detach().numpy())
-    for i, score in enumerate(pred_score):
-      if score > .8 and pred_class[i] == 9:
-        pred_box = [pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]]
-        accuracy.append(intersectionOverUnion(np.array(actualRect), np.array(pred_box)))
-        if(debugging):
-          showImage(pretrainedTestFolder + fileName, actualRect, pred_box)
+    #YOLO
+    processedImages['records'].append(actualImage)
+    pred = model([actualImage])
+    for temp in pred.pandas().xyxy:
+      for result in temp.to_numpy():
+        #print(result)
+        if int(result[5]) == 8:
+         pred_box = [float(result[0]), float(result[1]), float(result[2]), float(result[3])]
+         accuracies.append(intersectionOverUnion(np.array(actualRect), np.array(pred_box)))
+       
+    #non-YOLO    
+# =============================================================================
+#     img = transform(actualImage) # doesn't work for YOLO, comment out
+#     processedImages['records'].append(img)
+#     pred = model([img])  # includes NMS
+#     pred_class = list(pred[0]['labels'].numpy()) # Get the Prediction Score
+#     pred_boxes = [[(float(i[0]), float(i[1])), (float(i[2]), float(i[3]))] for i in list(pred[0]['boxes'].detach().numpy())] # Bounding boxes
+#     pred_score = list(pred[0]['scores'].detach().numpy())
+#     for i, score in enumerate(pred_score):
+#       if(debugging):
+#         print(score, pred_class[i])
+#       if score > .8 and pred_class[i] == 9:
+#         pred_box = [pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]]
+#         accuracy = intersectionOverUnion(np.array(actualRect), np.array(pred_box))
+#         if(accuracy == 0):
+#           print(i, fileName)
+#         accuracies.append(accuracy)
+#         if(debugging):
+#           showImage(pretrainedTestFolder + fileName, actualRect, pred_box)
+# =============================================================================
         
     #do intersection over union
     
@@ -100,8 +121,8 @@ def main():
   results = model(processedImages['records'])  # includes NMS
   t1 = time.time()
   print("time:" + str(t1-t0))
-  print(accuracy)
-  print("accuracy: " + str(statistics.mean(accuracy)))
+  print(accuracies)
+  print("accuracies: " + str(statistics.mean(accuracies)))
   
 def showImage(filePath, actualRect, predRect):
   rawImg = cv2.imread(filePath)
