@@ -4,6 +4,8 @@ import torch
 import cv2
 import time
 import torchvision
+import numpy as np
+import statistics
 
 from PIL import Image
 from torchvision import transforms as T
@@ -11,7 +13,7 @@ from torchvision import transforms as T
 vggJsonFile = './via_project_07Jun2022_19h40m26s.json'
 pretrainedTestFolder = './PreTrainedTest/'
 
-showImage = True
+debugging = False
 
 def main():
   
@@ -20,8 +22,8 @@ def main():
   #These work
 # =============================================================================
   #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-  model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
-  #model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True) 
+  #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
+  model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True) 
   #model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True) 
 # =============================================================================
 
@@ -50,9 +52,10 @@ def main():
   transform = T.Compose([T.ToTensor()]) # Defing PyTorch Transform
   
   processedImages = {"records":[]}
+  accuracy = []
   with open(vggJsonFile) as data_file:    
      data = json.load(data_file)
-  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[2:6]}
+  testKeys = {k: data['metadata'][k] for k in list(data['metadata'])[2:40]}
   #for key in data['metadata']:  #loop through meta data, all keys
   for key in testKeys:  #testKeys
     fid = data['metadata'][key]['vid'] #get record id 
@@ -70,7 +73,8 @@ def main():
     for i, score in enumerate(pred_score):
       if score > .8 and pred_class[i] == 9:
         pred_box = [pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]]
-        if(showImage):
+        accuracy.append(intersectionOverUnion(np.array(actualRect), np.array(pred_box)))
+        if(debugging):
           showImage(pretrainedTestFolder + fileName, actualRect, pred_box)
         
     #do intersection over union
@@ -93,9 +97,11 @@ def main():
 
   #img = img.unsqueeze(0) #needed for hybridnets
   t0 = time.time()
-  #results = model(processedImages['records'])  # includes NMS
+  results = model(processedImages['records'])  # includes NMS
   t1 = time.time()
-  print(t1-t0)
+  print("time:" + str(t1-t0))
+  print(accuracy)
+  print("accuracy: " + str(statistics.mean(accuracy)))
   
 def showImage(filePath, actualRect, predRect):
   rawImg = cv2.imread(filePath)
@@ -105,6 +111,30 @@ def showImage(filePath, actualRect, predRect):
   cv2.imshow('image', rawImg)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
+  
+#https://stackoverflow.com/questions/28723670/intersection-over-union-between-two-detections
+def intersectionOverUnion(box1, box2):
+  """
+  calculate intersection over union cover percent
+  :param box1: box1 with shape (N,4) or (N,2,2) or (2,2) or (4,). first shape is preferred
+  :param box2: box2 with shape (N,4) or (N,2,2) or (2,2) or (4,). first shape is preferred
+  :return: IoU ratio if intersect, else 0
+  """
+  # first unify all boxes to shape (N,4)
+  if box1.shape[-1] == 2 or len(box1.shape) == 1:
+    box1 = box1.reshape(1, 4) if len(box1.shape) <= 2 else box1.reshape(box1.shape[0], 4)
+  if box2.shape[-1] == 2 or len(box2.shape) == 1:
+    box2 = box2.reshape(1, 4) if len(box2.shape) <= 2 else box2.reshape(box2.shape[0], 4)
+  point_num = max(box1.shape[0], box2.shape[0])
+  b1p1, b1p2, b2p1, b2p2 = box1[:, :2], box1[:, 2:], box2[:, :2], box2[:, 2:]
+  # mask that eliminates non-intersecting matrices
+  base_mat = np.ones(shape=(point_num,))
+  base_mat *= np.all(np.greater(b1p2 - b2p1, 0), axis=1)
+  base_mat *= np.all(np.greater(b2p2 - b1p1, 0), axis=1)  
+  intersect_area = np.prod(np.minimum(b2p2, b1p2) - np.maximum(b1p1, b2p1), axis=1)# I area
+  union_area = np.prod(b1p2 - b1p1, axis=1) + np.prod(b2p2 - b2p1, axis=1) - intersect_area# U area
+  intersect_ratio = intersect_area / union_area# IoU
+  return float(base_mat * intersect_ratio)
     
 if __name__=="__main__":
   main()
