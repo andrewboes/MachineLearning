@@ -14,7 +14,7 @@ from torchvision import transforms as T
 vggJsonFile = './via_project_07Jun2022_19h40m26s.json'
 pretrainedTestFolder = './PreTrainedTest/'
 
-debugging = True
+debugging = False
 
 def main():
   
@@ -22,8 +22,8 @@ def main():
   #list of models: https://pytorch.org/hub/research-models/compact
   #These work
 # =============================================================================
-  model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-  #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
+  #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+  model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
   #model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True) 
   #model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True) #doesn't work at all the boxes are waaaay off
 # =============================================================================
@@ -79,14 +79,36 @@ def main():
       actualImage = Image.open(pretrainedTestFolder + fileName) # Load the image
       predictedBoxes = []
       #YOLO
-      processedImages['records'].append(actualImage)
-      pred = model([actualImage])
-      for temp in pred.pandas().xyxy:
-        for result in temp.to_numpy():
-          if int(result[5]) == 8:
-           pred_box = [float(result[0]), float(result[1]), float(result[2]), float(result[3])]
-           predictedBoxes.append(pred_box)
-      
+# =============================================================================
+#       processedImages['records'].append(actualImage)
+#       pred = model([actualImage])
+#       for temp in pred.pandas().xyxy:
+#         for result in temp.to_numpy():
+#           if int(result[5]) == 8:
+#            pred_box = [float(result[0]), float(result[1]), float(result[2]), float(result[3])]
+#            predictedBoxes.append(pred_box)
+# =============================================================================
+           
+           #non-YOLO    
+       
+      img = transform(actualImage) # doesn't work for YOLO, comment out
+      processedImages['records'].append(img)
+      pred = model([img])  # includes NMS
+      pred_class = list(pred[0]['labels'].numpy()) # Get the Prediction Score
+      pred_boxes = [[(float(i[0]), float(i[1])), (float(i[2]), float(i[3]))] for i in list(pred[0]['boxes'].detach().numpy())] # Bounding boxes
+      pred_score = list(pred[0]['scores'].detach().numpy())
+      for i, score in enumerate(pred_score):
+        if(debugging):
+          print(score, pred_class[i])
+        if score > .8 and pred_class[i] == 9:
+          predictedBoxes.append([pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]])
+          #accuracy = intersectionOverUnion(np.array(actualRect), np.array(pred_box))
+# =============================================================================
+#           if(accuracy == 0):
+#             print(i, fileName)
+#           accuracies.append(accuracy)
+# =============================================================================
+                
       closestBox = [0,0,0,0]
       closestDist = 2000
       for pred_box in predictedBoxes:
@@ -97,27 +119,10 @@ def main():
           if distance < closestDist:
             closestBox = act_box
         accuracies.append(intersectionOverUnion(np.array(closestBox), np.array(pred_box)))
+        if(debugging):
+          showImage(pretrainedTestFolder + fileName, closestBox, pred_box)
        
-    #non-YOLO    
-# =============================================================================
-#     img = transform(actualImage) # doesn't work for YOLO, comment out
-#     processedImages['records'].append(img)
-#     pred = model([img])  # includes NMS
-#     pred_class = list(pred[0]['labels'].numpy()) # Get the Prediction Score
-#     pred_boxes = [[(float(i[0]), float(i[1])), (float(i[2]), float(i[3]))] for i in list(pred[0]['boxes'].detach().numpy())] # Bounding boxes
-#     pred_score = list(pred[0]['scores'].detach().numpy())
-#     for i, score in enumerate(pred_score):
-#       if(debugging):
-#         print(score, pred_class[i])
-#       if score > .8 and pred_class[i] == 9:
-#         pred_box = [pred_boxes[i][0][0], pred_boxes[i][0][1], pred_boxes[i][1][0], pred_boxes[i][1][1]]
-#         accuracy = intersectionOverUnion(np.array(actualRect), np.array(pred_box))
-#         if(accuracy == 0):
-#           print(i, fileName)
-#         accuracies.append(accuracy)
-#         if(debugging):
-#           showImage(pretrainedTestFolder + fileName, actualRect, pred_box)
-# =============================================================================
+
         
     #do intersection over union
     
