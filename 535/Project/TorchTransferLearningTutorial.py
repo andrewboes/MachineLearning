@@ -1,7 +1,6 @@
 # License: BSD
 # Author: Sasank Chilamkurthy
 # https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html
-# source: https://github.com/pytorch/tutorials/blob/master/beginner_source/transfer_learning_tutorial.py
 from __future__ import print_function, division
 
 import torch
@@ -147,7 +146,7 @@ def main():
       ]),
   }
   
-  data_dir = './transferTraining'
+  data_dir = './recTransferTraining'
   image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
   dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
   dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -160,11 +159,13 @@ def main():
   inputs, classes = next(iter(dataloaders['train']))
   
   # Make a grid from batch
-  out = torchvision.utils.make_grid(inputs)
+  #out = torchvision.utils.make_grid(inputs)
   
-  imshow(out, title=[class_names[x] for x in classes])
+  #imshow(out, title=[class_names[x] for x in classes])
   
-  model_ft = models.resnet18(pretrained=True)
+  #model_ft = models.resnet18(pretrained=True)
+  #vit_l_32
+  model_ft = models.resnet152(pretrained=True)
   num_ftrs = model_ft.fc.in_features
   # Here the size of each output sample is set to 2.
   # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
@@ -180,8 +181,9 @@ def main():
   # Decay LR by a factor of 0.1 every 7 epochs
   exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
   
-  model_ft = train_model(dataset_sizes, device, dataloaders, model_ft, criterion, optimizer_ft, exp_lr_scheduler, 1)
+  model_ft = train_model(dataset_sizes, device, dataloaders, model_ft, criterion, optimizer_ft, exp_lr_scheduler, 25)
   visualize_model(class_names, dataloaders, device, model_ft)
+  #save model 
 
 
 if __name__=="__main__":
