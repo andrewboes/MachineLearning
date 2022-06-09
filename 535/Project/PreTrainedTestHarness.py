@@ -15,8 +15,11 @@ def main():
   
   #list of models: https://pytorch.org/hub/research-models/compact
   #work
-  model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+  #model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
   #model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True) 
+  #https://pytorch.org/vision/stable/generated/torchvision.models.segmentation.fcn_resnet101.html#torchvision.models.segmentation.fcn_resnet101
+  #https://colab.research.google.com/github/pytorch/pytorch.github.io/blob/master/assets/hub/pytorch_vision_fcn_resnet101.ipynb
+  model = torchvision.models.segmentation.fcn_resnet101(pretrained=True)
 
 
   #Run but either can't figure out how to compare or don't classify   
@@ -64,13 +67,21 @@ def main():
     
     #classify file
     #calc dist
+  img = img.convert("RGB")
+  preprocess = T.Compose([
+      T.ToTensor(),
+      T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+  ])
   
+  input_tensor = preprocess(img)
+  input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
 
   #img = img.unsqueeze(0) #needed for hybridnets
   t0 = time.time()
-  results = model(processedImages['records'])  # includes NMS
+  results = model(input_batch)  # includes NMS
   t1 = time.time()
   print(t1-t0)
+  
     
 if __name__=="__main__":
   main()
