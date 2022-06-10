@@ -63,7 +63,7 @@ After the relatively simple task of parsing the video into images, the next thin
 
 \subsection{Recreational vs. Non-recreational}
 
- As the port sampler count is only recreational boats, we will need to filter the non-recreational boats out. Publicly available datasets don't have distinguish between the two types of boats so we plan on using zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. The difference between recreational and non-recreational boats is typically very stark. However there are quite a few edge cases where they are very similar.
+ As the port sampler count is only recreational boats, we will need to filter the non-recreational boats out. Publicly available datasets don't have distinguish between the two types of boats so we plan on using zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. The difference between recreational and non-recreational boats is typically very obvious. However there are a few edge cases where they are very similar.
 
 \subsection{Multi-Object Tracking}
 
@@ -72,7 +72,7 @@ For the most difficult part of this project, MOT, we plan on trying three differ
 \begin{figure*}[t]
   \centering
     \includegraphics[scale=.4]{roughFlow.png}
-    \caption{A. Video is captured by cameras. B. Every two hours data is uploaded using SpaceX Starlink satellite internet. C.-D. Once the video is received it is parsed into sequential frames. E. Semantic segmentation is performed using MaskRCNN pre-trained model. F. Get instances from segmentation and group them together. Once grouped, classify all of the images as either recreational and non-recreational. The classification of the highest value wins. G. Record count of recreational boats in 30 minute intervals.}
+    \caption{A. Video is captured by cameras. B. Every two hours data is uploaded using SpaceX Starlink satellite internet. C.-D. Once the video is received it is parsed into sequential frames. E. Semantic segmentation is performed using Mask RCNN pre-trained model. F. Get instances from segmentation and group them together. Once grouped, classify all of the images as either recreational and non-recreational. The classification of the highest value wins. G. Record count of recreational boats in 30 minute intervals.}
     \label{fig:pipline}
   \hfill
 \end{figure*}
@@ -89,31 +89,61 @@ As stated above, the most complicated part of this project is tracking the objec
 
 Figure \ref{fig:pipline} demonstrates a high level view of our data flow. 
 
-To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple. While the implementation of this algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from \cite{10.1007/978-3-540-24670-1_3}. as edge cases, such as boats leaving and entering near the same location on adjacent frames and smaller boats going behind large boats, piled up the SORT tracker didn't perform very well. 
+As we knew MOT was going to be the crux of our success we split our efforts into three different approaches explained below.
 
-As we knew MOT was going to be the crux of our success we split our efforts into two different approaches.
+\subsection{SORT}
+
+To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple. 
 
 \subsection{Counting-by-tracking-by-detection}
 
-Mask RCNN handles instance identification in an ordered list fashion.  Two sequential frames with multiple instances will reclassify in the same order.  Using this baseline, we were able to create a set of rules to ensure accuracy on counting and gaining some information on the trajectory of identified boats by calculating movement speed based on image offsets, count frames that the boat instance occurred in, and proof check that it had a realistic movement off-screen, and traveled an appropriate distance to get there (which helped disregard issues in classification such as occasional double counting overlaps and false positives).  During the span of frame counts, we again referred back to the image classification per frame, to count the max frame of any people classified within the bounding box of the boat to get an approximate passenger count. Also using this trajectory speed, the width of the camera observation, and the y position, we are able to calculate the speed of the boat. 
+The next effort is to use object detection to track the boats then associate detections in adjacent frames to get a count. Mask RCNN handles instance identification in an ordered list fashion.  Two sequential frames with multiple instances will reclassify in the same order.  Using this baseline, we will try to create a set of rules to ensure accuracy on counting and gaining some information on the trajectory of identified boats by calculating movement speed based on image offsets, count frames that the boat instance occurred in, and proof check that it had a realistic movement off-screen, and traveled an appropriate distance to get there (which helped disregard issues in classification such as occasional double counting overlaps and false positives).  During the span of frame counts, we again referred back to the image classification per frame. One of our stretch goals was to get a count of people on board to do this we count the max frame of any people classified within the bounding box of the boat to get an approximate passenger count. Also using this trajectory speed, the width of the camera observation, and the y position, we are able to calculate the speed of the boat. 
 
+\begin{figure*}[t]
+  \centering
+    \includegraphics[scale=.75]{WinonaJ.png}
+    \caption{Red outline is the actual box}
+    \label{fig:WinonaJ}
+  \hfill
+\end{figure*}
+\section{Results} 
 \subsection{Counting without tracking}
 
+As we don't actually need to track the boats in our video, we propose creating an LSTM where the input is boat centroid locations and the output is the running total. We don't have any data for this approach so we'll make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we'll use a classification structure and allow outputs from 0 to 10. 
 
+Making these assumptions allows us to generate data to train the network. We'll generate lines that have a small slope and a wide range of values for the y-intercept. Then we'll sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
 
-\section{Results}
 
 \subsection{Classifying}
 
-Table of perf of different models
+Table \ref{tab:ModelPerf} shows the performance of a few different pre-trained models we tested. These were tested on an older server without a GPU so the raw times aren't important but the relative performance is. For accuracy, we manually created a test set of 387 images with bounding boxes and compared our bounding boxes to the predicted bounding boxes using intersection over union.
 
-Image of boxes around boats
+We didn't find that outputs from different models got the exact same bounding boxes so there may be some room boost accuracy with ensemble learning.
+
+This effort was in parallel with our other efforts so we ended up using Mask RCNN in our tracking but will explore using YOLO v5 in the future.
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{@{}lc@{}lc@{}}
+    \toprule
+    Model & Accuracy\nobreakspace\nobreakspace\nobreakspace & \nobreakspace\nobreakspace Time \\
+    \midrule
+    YOLO v5\cite{pytorch_yolov5} & 69\% & 1m 24s \\
+    Faster RCNN\cite{pytorch_fasterrcnn_resnet50_fpn} & 66\% & 31m 14.5s \\
+    Mask RCNN\cite{pytorch_maskrcnn_resnet50_fpn} & 78\% & 32m 46.5s\\
+    Retina Net\cite{pytorch_retinanet_resnet50_fpn} & 69\% & 33m 48s\\
+    \bottomrule
+  \end{tabular}
+  \caption{YOLO FTW}
+  \label{tab:ModelPerf}
+\end{table}
+
 
 \subsection{Recreational vs. Non-recreational}
 
-The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We didn't spend too much time hyperparameter tuning and didn't do any data augmentation. Our best accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
+The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We didn't spend too much time hyperparameter tuning and didn't do any data augmentation. Our best train accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
 
-As our results show, many recreational and non-recreational boats are very easy to differentiate however there is one type that was frequently misclassified. Many large recreational boats look very similar to charter boats. The difference being that recreational boats usually have a larger cabin whereas charter boats have a larger working platform near the stern. For Figure \ref{fig:non_rec_boat}, we had to ask MRP what makes this boat non-recreational and the response indicated that they personally identified the boat as belonging to a charter company.
+As our results show, many recreational and non-recreational boats are very easy to differentiate however there is one type that was frequently misclassified. Many large recreational boats look very similar to charter boats. The difference being that recreational boats usually have a larger cabin whereas charter boats have a larger working platform near the stern. For Figures \ref{fig:non_rec_boat} and \ref{fig:rec_boat}, we had to ask MRP what makes Figure \ref{fig:non_rec_boat} a non-recreational and the response indicated that they personally identified the boat as belonging to a charter company.
 
 \begin{figure}
  \center
@@ -129,17 +159,29 @@ As our results show, many recreational and non-recreational boats are very easy 
   \label{fig:rec_boat}
 \end{figure}
 
-\subsection{Multi-Object Tracking}
+\subsection{SORT}
+
+While the implementation of the SORT algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from \cite{10.1007/978-3-540-24670-1_3}. As edge cases piled up, such as boats leaving and entering near the same location on adjacent frames and smaller boats going behind large boats, the SORT tracker didn't perform very well. Our results had frequent double counting and losing instances.
+
+\subsection{Counting-by-tracking-by-detection}
 
 Talk about edge cases? Occlusion? Austin powers boat?
 
+\subsection{Counting without tracking}
+
+The results of our LSTM were very promising. It did take quite a bit of hyperparameter tuning but we were able to achieve validation accuracy of 94\%. As our counting by tracking efforts were also positive we focused a lot of our efforts on that and didn't test the LSTM with real data. Overall this was a very positive outcome and we will continue to pursue it.
+
 \subsection{Putting it all together}
 
-Comparing final count to 
+<Comparing our count count to MRP count/?
 
+\section{Future Work}
 
+There are a number of stable models available from PyTorch and there are quite a few models that are available in the community. In our test we were only able to compare one community model (YOLO v5 \cite{pytorch_yolov5}) and this is because the image inputs and model outputs are different between them all. Some of the differences are simple (different expected transforms) others are more complicated (output data structure, rectangle format) and few of them offer comprehensive documentation on their use. This makes adding each new model laborious so we arbitrarily drew the line at four. In the future we hope to add more of these to our test results.
 
+Once the application is running in production, if a boat's classification is close to the middle between recreational and non-recreational we'll flag it for review by MRP. Periodically we'll retrain the classifier with the latest inputs.
 
+As we often say when developing a project, make it work then make it fast. Currently we're reading video with one frame per second and it takes us over one second to classify that that frame. We believe there is a lot of room to improve our performance. Some preliminary results show that lowering the resolution and other image transforms improve performance by 4x while not hurting accuracy. Also, we'd like to try YOLO v5 in our counting-by-tracking-by-detection method and seem how that affects performance and accuracy.
 
 \begin{comment}
 
