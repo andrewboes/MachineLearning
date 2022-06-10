@@ -12,6 +12,7 @@
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{paralist}
+\usepackage{comment}
 
 \usepackage[pagebackref,breaklinks,colorlinks]{hyperref}
 
@@ -33,113 +34,63 @@
 \begin{document}
 
 %%%%%%%%% TITLE - PLEASE UPDATE
-\title{\LaTeX\ AI535 Final Report Style Guide}
+\title{ Using Transfer Learning To Count Recreational Fishing Boats }
 
-\author{First Author \hspace{20pt} Second Author \hspace{20 pt} Third Author\\
-Oregon State University\\
-{\tt\small \{firstauthor, secondauthor, thirdauthor\}@oregonstate.edu}
+\author{Andrew Boes \hspace{30pt} Jesse Swartz \\
+Oregon Department of Fish and Wildlife\\
+{\tt\small \{andrew.j.boes, jesse.l.swartz\}@odfw.oregon.gov}
 }
 \maketitle
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   The ABSTRACT is to be in fully justified italicized text, at the top of the left-hand column, below the author and affiliation information.
-   Use the word ``Abstract'' as the title, in 12-point Times, boldface type, centered relative to the column, initially capitalized.
-   The abstract is to be in 10-point, single-spaced type.
+   The Oregon Dept. of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up samplers to spend more time getting biological fish data.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
-\section{Final Report Guidelines}
-\label{sec:intro}
+\section{Background}
 
-This document serves as a style guide for the AI535 Final Report and describes the expected content. 
+While more and more Oregonians go outside, the number of fishing licenses and number of fish available to catch has been declining for the past few years [CITATION NEEDED]. ODFW spends a considerable amount of resources analyzing this behavior to maintain the health of the fish population. Due to recent advances in technology such as better 4G cell phone coverage on the Oregon Coast and SpaceX Starlink satellite broadband internet, the Marine Resources Program (MRP) of ODFW is now able to upload videos at three ports. Previously, these ports were either counted in person or VHS tapes were driven to a central location to be reviewed. Starting in 2022 the ports of Newport, Depot Bay, and Charleston have cameras that upload video every two hours to the cloud. This availability allows us to start working on automating the daily vessel count.\\[-5pt]
 
-\subsection{Content} 
-Reports should be similar to real papers -- having a title, abstract, introduction, discussion of background material and related work, detailed technical approach, experimental results, and a conclusion. The typical section layout is below along with questions typically covered by each in a full paper. Depending on your project (and its progress), you may not have full answers to each.\\[-5pt]
-\begin{compactenum}[1)]
-    \item \textbf{Abstract.} A short 5-6 sentence overview. What is the problem? Why should we care? How do you address it? What are your general results? Think of this as an ``ad'' for your work that helps readers decide if it is relevant.\\
-    
-    \item \textbf{Introduction.} What is being studied? Why is it important? What problems keep it from being solved already? How does your approach resolve these? What experiments suggest your approach was effective? There are dedicated sections later for some of these questions, just    provide a summary and motivation here. \\
-    
-    \item \textbf{Related Work.} How has prior work addressed this problem? How is your approach different / similar to the prior work? Organize, contrast, and compare with others -- don't just list prior work, that adds little value! \\
-    
-    \item \textbf{Methodology.} What did you do? And why? Be specific about algorithmic details. Be clear about what ideas are novel vs.~what you are using from others. Try to organize this section appropriately -- if your algorithm has multiple stages, separate them out as subsections.  \\
-    
-    \item \textbf{Results.} What is the experimental setting used to evaluate your approach? Why is that setting appropriate? How were the experiments run? What are the results? Are there reasonable baselines or prior work to compare to? If so, how does your approach compare? \\
-    
-    \item \textbf{Conclusion.} What was learned from this work? What does it suggest are useful things to do next? What are limitations of the approach or experiments?\\
-\end{compactenum}
+\section{Introduction}
 
-\noindent Your report should also end with a bibliography of works cited.  In this template, that is handled automatically with BibTex. For example, I might cite papers listed in \texttt{egbib.bib} like \cite{Alpher04, Alpher02, ALpher03} as a group or individually \cite{Alpher05}. \href{https://www.overleaf.com/learn/latex/Bibliography_management_with_bibtex}{See this tutorial for more information on BibTex.}
+We propose using transfer learning to identify boats in images taken from port surveillance cameras. We will then use semantic segmentation and multi-object tracking (MOT) over a series of frames to identify individual boats which will allow us to get the count for a given time period.  As the port sampler count is only recreational vessels, we will use zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. Once the count is complete we can compare our results to the data that is obtained by port samplers.
 
-\begin{figure}[t]
-    \centering
-    \fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
-    \caption{Example of a single-column figure}
-    \label{fig:my_label_single}
-\end{figure}
+\subsection{Classifying}
+
+After the relatively simple task of parsing the video into images, the next thing to do is to perform instance segmentation on each frame of the video. There are many comprehensive comparisons of different detection methods [CITATION NEEDED] but we chose to compare a few that are available as pre-trained PyTorch models on our data, using our hardware. This will allow us to 
+
+\subsection{Recreational vs. Non-recreational}
+
+Here we have a small set of data that was classified by the pros
+
+\subsection{Multi-Object Tracking}
+
+For the most difficult part of this project, MOT, we tried three different approaches. We started by reviewing several tracking algorithms and decided to start with SORT [CITATION NEEDED]. We thought this was a good place to start as the 'S' stands for simple. While the implementation of this algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from. We started our second approach.
+
+\section{Related Work}
+
+As stated above, the most complicated part of this project is tracking the object from frame to frame. Recently, tracking-by-detection has become the standard paradigm for MOT. The main idea is to split the problem into two parts: object detection and data association. Over the past few years, object detection has seen great
+improvement thanks to deep learning techniques, but data association remains a challenge for multi-object tracking [CITATION NEEDED]. 
+
+
+
+
+
+\begin{comment}
+
 \begin{figure*}[t]
   \centering
-  \begin{subfigure}{0.68\linewidth}
-    \fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
+  \begin{subfigure}{0.98\linewidth}
+    
+    \includegraphics[scale=1.25]{roughFlow.png}
     \caption{An example of a subfigure.}
     \label{fig:short-a}
   \end{subfigure}
   \hfill
-  \begin{subfigure}{0.28\linewidth}
-    \fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
-    \caption{Another example of a subfigure.}
-    \label{fig:short-b}
-  \end{subfigure}
-  \caption{Example of two-column figure with subfigures.}
-  \label{fig:short}
 \end{figure*}
 
-\subsection{Formatting}
-This document is the report template and is based off of the CVPR 2022 author template. Modifying text size, line spacing, or margins is prohibited. 
 
-\xhdr{Length.} Reports (including references and all figures) must be at least four pages and can be at most 8 pages. 
-
-
-
-
-\xhdr{Figures and Tables} Figures and tables must include captions and be centered. 
-
-When placing figures in \LaTeX, it's almost always best to use \verb+\includegraphics+, and to specify the figure width as a multiple of the line width as in the example below
-{\small\begin{verbatim}
-   \includegraphics[width=0.8\linewidth]
-                   {myfile.pdf}
-\end{verbatim}
-}
-\noindent Further, aligning figures at the top of the page is preferred {\small\begin{verbatim}
-   \begin{figure}[t]
-\end{verbatim}
-}
-
-
-For tables, no vertical lines should be present. Please us the \texttt{booktabs} package's \texttt{toprule}, \texttt{midrule}, and \texttt{bottomrule} commands for horizontal lines as in the example in Table \ref{tab:example}.
-
-
-
-
-\xhdr{Mathematics.} All equations appearing in the report should be numbered. For example, using the \texttt{equation} or \texttt{eqnarray} environments will handle this automatically:
-%
-\begin{equation}
-  E = m\cdot c^2
-  \label{eq:important}
-\end{equation}
-%
-\begin{eqnarray}
-a^2 + b^2 &=& c^2\\
-         &=& ln(e^{c^2})
-\end{eqnarray}
-%
-For further style tips regarding equations in prose, see \url{www.pamitc.org/documents/mermin.pdf}.
-
-\xhdr{Language.} Reports are expected to be in English with minimal spelling and grammar errors. Point will be deducted if these errors make understanding the report difficult.
-
-\subsection{Submission}
-Papers must be submitted as PDFs to Canvas -- no other format will be accepted. Only one report per group needs to be submitted.
 
 %------------------------------------------------------------------------
 
@@ -160,7 +111,7 @@ Papers must be submitted as PDFs to Canvas -- no other format will be accepted. 
   \caption{Results.   Ours is better.}
   \label{tab:example}
 \end{table}
-
+\end{comment}
 %-------------------------------------------------------------------------
 
 
