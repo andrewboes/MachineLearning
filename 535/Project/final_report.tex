@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{paralist}
 \usepackage{comment}
+\usepackage{url}
 
 \usepackage[pagebackref,breaklinks,colorlinks]{hyperref}
 
@@ -44,53 +45,103 @@ Oregon Department of Fish and Wildlife\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   The Oregon Dept. of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up samplers to spend more time getting biological fish data.
+   The Oregon Department of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up samplers to spend more time getting biological fish data.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
 \section{Background}
 
-While more and more Oregonians go outside, the number of fishing licenses and number of fish available to catch has been declining for the past few years [CITATION NEEDED]. ODFW spends a considerable amount of resources analyzing this behavior to maintain the health of the fish population. Due to recent advances in technology such as better 4G cell phone coverage on the Oregon Coast and SpaceX Starlink satellite broadband internet, the Marine Resources Program (MRP) of ODFW is now able to upload videos at three ports. Previously, these ports were either counted in person or VHS tapes were driven to a central location to be reviewed. Starting in 2022 the ports of Newport, Depot Bay, and Charleston have cameras that upload video every two hours to the cloud. This availability allows us to start working on automating the daily vessel count.\\[-5pt]
+While more and more Oregonians go outside, the number of fishing licenses and number of fish available to catch has been declining for the past few years \cite{ODFW_Annual}. ODFW spends a considerable amount of resources analyzing this behavior to maintain the health of the fish population. Due to recent advances in technology such as better 4G cell phone coverage on the Oregon Coast and SpaceX Starlink satellite broadband internet, the Marine Resources Program (MRP) of ODFW is now able to upload videos at three ports. Previously, these ports were either counted in person or VHS tapes were driven to a central location to be reviewed. Starting in 2022 the ports of Newport, Depot Bay, and Charleston have cameras that upload video every two hours to the cloud. This availability allows us to start working on automating the daily boat count.\\[-5pt]
 
 \section{Introduction}
 
-We propose using transfer learning to identify boats in images taken from port surveillance cameras. We will then use semantic segmentation and multi-object tracking (MOT) over a series of frames to identify individual boats which will allow us to get the count for a given time period.  As the port sampler count is only recreational vessels, we will use zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. Once the count is complete we can compare our results to the data that is obtained by port samplers.
+We propose using transfer learning to identify boats in images taken from port surveillance cameras. We will then use semantic segmentation and multi-object tracking (MOT) over a series of frames to identify individual boats which will allow us to get the count for a given time period. Once the count is complete we can compare our results to the data that is obtained by port samplers.
 
 \subsection{Classifying}
 
-After the relatively simple task of parsing the video into images, the next thing to do is to perform instance segmentation on each frame of the video. There are many comprehensive comparisons of different detection methods [CITATION NEEDED] but we chose to compare a few that are available as pre-trained PyTorch models on our data, using our hardware. This will allow us to 
+After the relatively simple task of parsing the video into images, the next thing to do is to perform instance segmentation on each frame of the video. There are many comprehensive comparisons of different detection methods \cite{pytorch_models} but we chose to compare a few that are available as pre-trained PyTorch models on our data, using our hardware. [MORE]
 
 \subsection{Recreational vs. Non-recreational}
 
-Here we have a small set of data that was classified by the pros
+ As the port sampler count is only recreational boats, we will need to filter the non-recreational boats out. Publicly available datasets don't have distinguish between the two types of boats so we plan on using zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. The difference between recreational and non-recreational boats is typically very stark. However there are quite a few edge cases where they are very similar.
 
 \subsection{Multi-Object Tracking}
 
-For the most difficult part of this project, MOT, we tried three different approaches. We started by reviewing several tracking algorithms and decided to start with SORT [CITATION NEEDED]. We thought this was a good place to start as the 'S' stands for simple. While the implementation of this algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from. We started our second approach.
+For the most difficult part of this project, MOT, we plan on trying three different approaches. This will include a heuristic based tracking algorithm and using the hidden state of one of the networks to track the objects. In addition, we'll try counting the boats without tracking by passing the results of our semantic segmentation over a series of frames to a Long-Short Term Memory (LSTM) network.
+
+\begin{figure*}[t]
+  \centering
+    \includegraphics[scale=.4]{roughFlow.png}
+    \caption{A. Video is captured by cameras. B. Every two hours data is uploaded using SpaceX Starlink satellite internet. C.-D. Once the video is received it is parsed into sequential frames. E. Semantic segmentation is performed using MaskRCNN pre-trained model. F. Get instances from segmentation and group them together. Once grouped, classify all of the images as either recreational and non-recreational. The classification of the highest value wins. G. Record count of recreational boats in 30 minute intervals.}
+    \label{fig:pipline}
+  \hfill
+\end{figure*}
 
 \section{Related Work}
 
-As stated above, the most complicated part of this project is tracking the object from frame to frame. Recently, tracking-by-detection has become the standard paradigm for MOT. The main idea is to split the problem into two parts: object detection and data association. Over the past few years, object detection has seen great
-improvement thanks to deep learning techniques, but data association remains a challenge for multi-object tracking [CITATION NEEDED]. 
+We found some research in marina monitoring systems \cite{marina_boatdetector} and even a commercial solution that uses cameras to determine if marina slips are available \cite{Nuvis}. In addition there was a Kaggle competition to find ships in satellite images \cite{kaggle_ship_detection, Stofa_2020}. While these did provide some insight to what others were doing in this field, we found their approaches (radar and sonar) and datasets (high altitude airplanes and satellites) weren't applicable to our work.
+
+There was one abstract of a paper that we found that looked promising \cite{UCalagary}. It looked like their goal was nearly identical to ours but our search for the paper or any other details came up empty. While we would like to know their results, finding this validated the need for automated boat counting!
+
+As stated above, the most complicated part of this project is tracking the object from frame to frame. Recently, tracking-by-detection has become the standard paradigm for MOT. The main idea is to split the problem into two parts: object detection and data association. Over the past few years, object detection has seen great improvement thanks to deep learning techniques\cite{https://doi.org/10.48550/arxiv.1506.01497}, but data association remains a challenge for multi-object tracking.
+
+\section{Methodology}
+
+Figure \ref{fig:pipline} demonstrates a high level view of our data flow. 
+
+To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple. While the implementation of this algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from \cite{10.1007/978-3-540-24670-1_3}. as edge cases, such as boats leaving and entering near the same location on adjacent frames and smaller boats going behind large boats, piled up the SORT tracker didn't perform very well. 
+
+As we knew MOT was going to be the crux of our success we split our efforts into two different approaches.
+
+\subsection{Counting-by-tracking-by-detection}
+
+Mask RCNN handles instance identification in an ordered list fashion.  Two sequential frames with multiple instances will reclassify in the same order.  Using this baseline, we were able to create a set of rules to ensure accuracy on counting and gaining some information on the trajectory of identified boats by calculating movement speed based on image offsets, count frames that the boat instance occurred in, and proof check that it had a realistic movement off-screen, and traveled an appropriate distance to get there (which helped disregard issues in classification such as occasional double counting overlaps and false positives).  During the span of frame counts, we again referred back to the image classification per frame, to count the max frame of any people classified within the bounding box of the boat to get an approximate passenger count. Also using this trajectory speed, the width of the camera observation, and the y position, we are able to calculate the speed of the boat. 
+
+\subsection{Counting without tracking}
+
+
+
+\section{Results}
+
+\subsection{Classifying}
+
+Table of perf of different models
+
+Image of boxes around boats
+
+\subsection{Recreational vs. Non-recreational}
+
+The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We didn't spend too much time hyperparameter tuning and didn't do any data augmentation. Our best accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
+
+As our results show, many recreational and non-recreational boats are very easy to differentiate however there is one type that was frequently misclassified. Many large recreational boats look very similar to charter boats. The difference being that recreational boats usually have a larger cabin whereas charter boats have a larger working platform near the stern. For Figure \ref{fig:non_rec_boat}, we had to ask MRP what makes this boat non-recreational and the response indicated that they personally identified the boat as belonging to a charter company.
+
+\begin{figure}
+ \center
+  \includegraphics[scale=.41]{non_rec_boat_ex.png}
+  \caption{Non-recreational boat}
+  \label{fig:non_rec_boat}
+\end{figure}
+
+\begin{figure}
+ \center
+  \includegraphics[scale=.47]{rec_boat_ex.png}
+  \caption{Recreational boat}
+  \label{fig:rec_boat}
+\end{figure}
+
+\subsection{Multi-Object Tracking}
+
+Talk about edge cases? Occlusion? Austin powers boat?
+
+\subsection{Putting it all together}
+
+Comparing final count to 
 
 
 
 
 
 \begin{comment}
-
-\begin{figure*}[t]
-  \centering
-  \begin{subfigure}{0.98\linewidth}
-    
-    \includegraphics[scale=1.25]{roughFlow.png}
-    \caption{An example of a subfigure.}
-    \label{fig:short-a}
-  \end{subfigure}
-  \hfill
-\end{figure*}
-
-
 
 %------------------------------------------------------------------------
 
