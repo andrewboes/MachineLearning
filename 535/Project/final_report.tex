@@ -79,7 +79,7 @@ For the most difficult part of this project, MOT, we plan on trying three differ
 
 \section{Related Work}
 
-We found some research in marina monitoring systems \cite{marina_boatdetector} and even a commercial solution that uses cameras to determine if marina slips are available \cite{Nuvis}. In addition there was a Kaggle competition to find ships in satellite images \cite{kaggle_ship_detection, Stofa_2020}. While these did provide some insight to what others were doing in this field, we found their approaches (radar and sonar) and datasets (high altitude airplanes and satellites) weren't applicable to our work.
+We found some research in marina monitoring systems \cite{marina_boatdetector} and even a commercial solution that uses cameras to determine if marina slips are available \cite{Nuvis}. In addition there was a Kaggle competition to find ships in satellite images \cite{kaggle_ship_detection, Stofa_2020}. While these did provide some insight to what others were doing in this field, we found their approaches (radar and sonar) and data sets (high altitude airplanes and satellites) weren't applicable to our work.
 
 There was one abstract of a paper that we found that looked promising \cite{UCalagary}. It looked like their goal was nearly identical to ours but our search for the paper or any other details came up empty. While we would like to know their results, finding this validated the need for automated boat counting!
 
@@ -93,7 +93,7 @@ As we knew MOT was going to be the crux of our success we split our efforts into
 
 \subsection{SORT}
 
-To get the final count we began by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the `S' stands for simple.  The integration to our dataset was simple enough, but the results were sporadic and not reliable to derive a final count. Reliable instance tracking is crucial to determining an exact count of unique identifications.
+To get the final count we began by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the `S' stands for simple.  The integration to our data set was simple enough, but the results were sporadic and not reliable to derive a final count. Reliable instance tracking is crucial to determining an exact count of unique identifications.
 
 \subsection{Counting-by-tracking-by-detection}
 
@@ -104,12 +104,6 @@ Identifying an instance on a single frame only requires the simple  segmentation
 To construct a proper result set, we need to process the results from our instance segmentation and derive a set of behaviors that satisfies the potential actions that an identified boat will take across the scene.  This will allow us to represent and track outcomes, as well as create edge case detections to deal with the unfortunately sporadic nature of image classification over long periods of time.
 
 
-\subsection{Counting without tracking}
-
-As an alternative to processing boat results, another option would be an LSTM where the input is boat centroid locations and the output is the running total. We do not have any data for this approach so we will make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we will use a classification structure and allow outputs from 0 to 10. 
-
-Making these assumptions allows us to use mock data to train the network. We will generate lines that have a small slope and a wide range of values for the y-intercept. Then we will sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
-
 \begin{figure*}[t]
   \centering
     \includegraphics[scale=.75]{WinonaJ.png}
@@ -117,13 +111,21 @@ Making these assumptions allows us to use mock data to train the network. We wil
     \label{fig:WinonaJ}
   \hfill
 \end{figure*}
+
+
+\subsection{Counting without tracking}
+
+As an alternative to processing boat results, another option would be an LSTM where the input is boat centroid locations and the output is the running total. We do not have any data for this approach so we will make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we will use a classification structure and allow outputs from 0 to 10. 
+
+Making these assumptions allows us to use mock data to train the network. We will generate lines that have a small slope and a wide range of values for the y-intercept. Then we will sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
+
 \section{Results} 
 
 \subsection{Classifying}
 
 Table \ref{tab:ModelPerf} shows the performance of a few different pre-trained models we tested. These were tested on an older server without a GPU so the raw times are not important but the relative performance is. For accuracy, we manually created a test set of 387 images with bounding boxes and compared our bounding boxes to the predicted bounding boxes using intersection over union.
 
-We did not find that outputs from different models produced the exact same bounding boxes so there may be some room boost accuracy with ensemble learning. For an example, see \ref{fig:WinonaJ}.
+We did not find that outputs from different models produced the exact same bounding boxes so there may be some room boost accuracy with ensemble learning. For an example, see Figure \ref{fig:WinonaJ}.
 
 This effort was in parallel with our other efforts so we ended up using Mask RCNN in our tracking but will explore using YOLO v5 in the future.
 
@@ -146,7 +148,7 @@ This effort was in parallel with our other efforts so we ended up using Mask RCN
 
 \subsection{Recreational vs. Non-recreational}
 
-The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We did not spend too much time hyperparameter tuning and did not implement any data augmentation. Our best training accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
+The data set used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We did not spend too much time hyperparameter tuning and did not implement any data augmentation. Our best training accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
 
 As our results show, many recreational and non-recreational boats are very easy to differentiate however there is one type that was frequently misclassified. Many large recreational boats look very similar to charter boats. The difference being that recreational boats usually have a larger cabin whereas charter boats have a larger working platform near the stern. For Figures \ref{fig:non_rec_boat} and \ref{fig:rec_boat}, we had to ask MRP what makes Figure \ref{fig:non_rec_boat} a non-recreational and the response indicated that they personally identified the boat as belonging to a charter company.
 
