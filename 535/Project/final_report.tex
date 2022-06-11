@@ -43,15 +43,15 @@ Oregon Department of Fish and Wildlife\\
 }
 \maketitle
 
-%%%%%%%%% ABSTRACT
+%%%%%%%%% ABSTRACT a change
 \begin{abstract}
-   The Oregon Department of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called port samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up port samplers to spend more time getting biological fish data.
+   The Oregon Department of Fish and Wildlife (ODFW) has set up cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called port samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up port samplers to spend more time getting biological fish data.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
 \section{Background}
 
-While more and more Oregonians go outside, the number of fishing licenses and number of fish available to catch has been declining for the past few years \cite{ODFW_Annual}. ODFW spends a considerable amount of resources analyzing this behavior to maintain the health of the fish population. Due to recent advances in technology such as better 4G cell phone coverage on the Oregon Coast and SpaceX Starlink satellite broadband internet, the Marine Resources Program (MRP) of ODFW is now able to upload videos at three ports. Previously, these ports were either counted in person or VHS tapes were driven to a central location to be reviewed. Starting in 2022 the ports of Newport, Depot Bay, and Charleston have cameras that upload video every two hours to the cloud. This availability allows us to start working on automating the daily boat count.\\[-5pt]
+While more and more Oregonians go outside, the number of fishing licenses and number of fish available to catch has been declining for the past few years \cite{ODFW_Annual}. ODFW spends a considerable amount of resources analyzing this behavior to maintain the health of the fish population. Due to recent advances in technology such as better 4G cell phone coverage on the Oregon Coast and SpaceX Starlink satellite broadband internet, the Marine Resources Program (MRP) of ODFW is now able to upload videos at three ports. Previously, these ports were either counted in person or VHS tapes were driven to a central location to be reviewed. Starting in 2022 the ports of Newport, Depot Bay, and Charleston have cameras that upload video every two hours to the cloud. This availability allows us to begin the process of automating the daily boat count.\\[-5pt]
 
 \section{Introduction}
 
@@ -63,11 +63,11 @@ After the relatively simple task of parsing the video into images, the next thin
 
 \subsection{Recreational vs. Non-recreational}
 
- As the port sampler count is only recreational boats, we will need to filter the non-recreational boats out. Publicly available datasets don't have distinguish between the two types of boats so we plan on using zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. The difference between recreational and non-recreational boats is typically very obvious. However there are a few edge cases where they are very similar.
+ As the port sampler count is only recreational boats, we will need to filter the non-recreational boats out. Publicly available data sets do not distinguish between the two types of boats so we plan on using zero-shot transfer learning to remove non-recreational (commercial, charter, Coast Guard, etc.) boats from the count. The difference between recreational and non-recreational boats is typically very obvious. However there are a few edge cases where they are very similar.
 
 \subsection{Multi-Object Tracking}
 
-For the most difficult part of this project, MOT, we plan on trying three different approaches. This will include a heuristic based tracking algorithm and using the hidden state of one of the networks to track the objects. In addition, we'll try counting the boats without tracking by passing the results of our semantic segmentation over a series of frames to a Long-Short Term Memory (LSTM) network.
+For the most difficult part of this project, MOT, we plan on trying three different approaches. This will include a heuristic based tracking algorithm and using the hidden state of one of the networks to track the objects. In addition, we will try counting the boats without tracking by passing the results of our semantic segmentation over a series of frames to a Long-Short Term Memory (LSTM) network.
 
 \begin{figure*}[t]
   \centering
@@ -93,7 +93,7 @@ As we knew MOT was going to be the crux of our success we split our efforts into
 
 \subsection{SORT}
 
-To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple.  The integration to our dataset was simple enough, but the results were sporadic and not reliable to derive a final count - reliable instance tracking is crucial to determining an exact count of unique identifications.
+To get the final count we began by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the `S' stands for simple.  The integration to our dataset was simple enough, but the results were sporadic and not reliable to derive a final count. Reliable instance tracking is crucial to determining an exact count of unique identifications.
 
 \subsection{Counting-by-tracking-by-detection}
 
@@ -101,14 +101,14 @@ In an effort to improve instance detection within the bounds of our specific app
 
 Identifying an instance on a single frame only requires the simple  segmentation of classifications.  Retaining an instance between multiple frame classifications is what posed a larger challenge, requiring dynamic identifiers to retain, omit, and introduce new instances as the temporal state of the scene progresses.  
 
-To construct a proper result set, we need to process the results from our instance segmentation and derive a set of behaviours that satisfies the potential actions that an identified boat will take across the scene.  This will allow us to represent and track outcomes, as well as create edge case detections to deal with the unfortunately sporadic nature of image classification over long periods of time.
+To construct a proper result set, we need to process the results from our instance segmentation and derive a set of behaviors that satisfies the potential actions that an identified boat will take across the scene.  This will allow us to represent and track outcomes, as well as create edge case detections to deal with the unfortunately sporadic nature of image classification over long periods of time.
 
 
 \subsection{Counting without tracking}
 
-As an alternative to processing boat results, another option would be an LSTM where the input is boat centroid locations and the output is the running total. We don't have any data for this approach so we'll make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we'll use a classification structure and allow outputs from 0 to 10. 
+As an alternative to processing boat results, another option would be an LSTM where the input is boat centroid locations and the output is the running total. We do not have any data for this approach so we will make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we will use a classification structure and allow outputs from 0 to 10. 
 
-Making these assumptions allows us to use mock data to train the network. We'll generate lines that have a small slope and a wide range of values for the y-intercept. Then we'll sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
+Making these assumptions allows us to use mock data to train the network. We will generate lines that have a small slope and a wide range of values for the y-intercept. Then we will sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
 
 \begin{figure*}[t]
   \centering
@@ -121,9 +121,9 @@ Making these assumptions allows us to use mock data to train the network. We'll 
 
 \subsection{Classifying}
 
-Table \ref{tab:ModelPerf} shows the performance of a few different pre-trained models we tested. These were tested on an older server without a GPU so the raw times aren't important but the relative performance is. For accuracy, we manually created a test set of 387 images with bounding boxes and compared our bounding boxes to the predicted bounding boxes using intersection over union.
+Table \ref{tab:ModelPerf} shows the performance of a few different pre-trained models we tested. These were tested on an older server without a GPU so the raw times are not important but the relative performance is. For accuracy, we manually created a test set of 387 images with bounding boxes and compared our bounding boxes to the predicted bounding boxes using intersection over union.
 
-We didn't find that outputs from different models got the exact same bounding boxes so there may be some room boost accuracy with ensemble learning. For an example, see \ref{fig:WinonaJ}.
+We did not find that outputs from different models produced the exact same bounding boxes so there may be some room boost accuracy with ensemble learning. For an example, see \ref{fig:WinonaJ}.
 
 This effort was in parallel with our other efforts so we ended up using Mask RCNN in our tracking but will explore using YOLO v5 in the future.
 
@@ -146,7 +146,7 @@ This effort was in parallel with our other efforts so we ended up using Mask RCN
 
 \subsection{Recreational vs. Non-recreational}
 
-The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We didn't spend too much time hyperparameter tuning and didn't do any data augmentation. Our best train accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
+The dataset used for training our system was professionally labeled by the MRP staff in Newport. This consisted of 100 training images and 50 validation images. The initial weights we used were from RESNET152 \cite{PyTorch_RESNET152}. We did not spend too much time hyperparameter tuning and did not implement any data augmentation. Our best training accuracy was 96\% and our best validation accuracy was 91\%. We were very happy with those numbers given how much effort they were to produce and are certain we can achieve a higher score with some tuning and more data.
 
 As our results show, many recreational and non-recreational boats are very easy to differentiate however there is one type that was frequently misclassified. Many large recreational boats look very similar to charter boats. The difference being that recreational boats usually have a larger cabin whereas charter boats have a larger working platform near the stern. For Figures \ref{fig:non_rec_boat} and \ref{fig:rec_boat}, we had to ask MRP what makes Figure \ref{fig:non_rec_boat} a non-recreational and the response indicated that they personally identified the boat as belonging to a charter company.
 
@@ -166,13 +166,13 @@ As our results show, many recreational and non-recreational boats are very easy 
 
 \subsection{SORT}
 
-While the implementation of the SORT algorithm was fairly straight forward, we found that as it relied on Kalman filter it was prone to drifts that were difficult to recover from \cite{10.1007/978-3-540-24670-1_3}. As edge cases piled up, such as boats leaving and entering near the same location on adjacent frames and smaller boats going behind large boats, the SORT tracker didn't perform very well. Our results had frequent double counting and losing instances.
+While the implementation of the SORT algorithm was fairly straightforward, we found that as it relied on Kalman filter it was prone to drifts that were difficult from which to recover \cite{10.1007/978-3-540-24670-1_3}. As edge cases piled up, such as boats leaving and entering near the same location on adjacent frames and smaller boats going behind large boats, the SORT tracker did not perform very well. Our results had frequent double counting and losing instances.
 
 \subsection{Counting-by-tracking-by-detection}
 
-Using MaskRCNN in conjunction with our transfer learning model created a great foundation for processing the behaviour driven actions of our projected boat instances.  
+Using Mask RCNN in conjunction with our transfer learning model created a great foundation for processing the behavior driven actions of our projected boat instances.  
 
-Our framework for instance identification was written with the idea of identifying the different states or current status of a boat.  A trajectory of a boat is determined by its centroid's movement across multiple frames.  Speed can be determined by difference in position.  Using these factors, we are able to distinguish and eliminate false positives that occur in the neural network identification results, such as double/overlapping bounding boxes and 'pop-in' instances that would severely affect the instance count.
+Our framework for instance identification was written with the idea of identifying the different states or current status of a boat.  A trajectory of a boat is determined by its centroid's movement across multiple frames.  Speed can be determined by difference in position.  Using these factors, we are able to distinguish and eliminate false positives that occur in the neural network identification results, such as double/overlapping bounding boxes and `pop-in' instances that would severely affect the instance count.
 
 This also allows us to fine tune a set of object oriented parameters for restricting instance detection, such as setting boundaries for new instance introductions (a boat never enters in the middle of the frame), frame count thresholds for ensuring the number of frames used for a trajectory is realistic, and movement side thresholds for predictive analysis on when a boat is intending to leave the frame.  All of these parameters can be set and tuned to allow for another layer of accuracy.
 
@@ -182,11 +182,11 @@ Overall, this methodology has allowed us to correct any issues and seems to be a
 
 \subsection{Counting without tracking}
 
-The results of our LSTM were also very promising. It did take quite a bit of hyperparameter tuning, but we were able to achieve validation accuracy of 94\%. As our tracking efforts were also positive we focused a lot of our efforts on that and didn't test the LSTM with real data. Overall this was a very positive outcome and we will continue to pursue it.
+The results of our LSTM were also very promising. It did take quite a bit of hyperparameter tuning, but we were able to achieve validation accuracy of 94\%. As our object tracking efforts were also positive we focused a lot of our efforts on that and did not test the LSTM with real data. Overall this was a very positive outcome and we will continue to pursue it.
 
 \subsection{Putting it all together}
 
-Our first efforts at comparing our output to test data did not go very well but they did help us identify quite a few edge cases. For a large portion of time periods we were able to achieve 100\% accuracy, for others it was 0\%. Overall, we were encouraged by this result as the vast majority of footage is just water or water with a single boat. By the time of our due date we weren't able to run the latest version of our application for an entire days worth of video. However we are confident that we've achieved a much improved accuracy as we've tested it on several edge cases. There are two that standout, one is a boat turning around that hovers on the edge of the frame for several frame that was getting miss counted and another was one of the few times several recreational boats are in frame with a non-recreational boat. Both of these instances were fixed with our latest code, Figure \ref{fig:sequence} contains the output of one such scenario. We've animated these scenarios and links are available in the More Information section. 
+Our first efforts at comparing our output to test data did not go very well but they did help us identify quite a few edge cases. For a large portion of time periods we were able to achieve 100\% accuracy, for others it was 0\%. Overall, we were encouraged by this result as the vast majority of footage is just water or water with a single boat. By the time of our due date we were not able to run the latest version of our application for an entire days worth of video. However we are confident that we have achieved a much improved accuracy as we have tested it on several edge cases. There are two that standout: one is a boat turning around that hovers on the edge of the frame for several frames that was getting miscounted and another was one of the few times several recreational boats are in frame with a non-recreational boat. Both of these instances were fixed with our latest code. Figure \ref{fig:sequence} contains the output of one such scenario. We have animated these scenarios and links are available in the More Information section. 
 
 \begin{figure}
  \center
@@ -199,9 +199,9 @@ Our first efforts at comparing our output to test data did not go very well but 
 
 There are a number of stable models available from PyTorch and there are quite a few models that are available in the community. In our test we were only able to compare one community model (YOLO v5 \cite{pytorch_yolov5}) and this is because the image inputs and model outputs are different between them all. Some of the differences are simple (different expected transforms) others are more complicated (output data structure, rectangle format) and few of them offer comprehensive documentation on their use. This makes adding each new model laborious so we arbitrarily drew the line at four. In the future we hope to add more of these to our test results.
 
-Once the application is running in production, if a boat's classification is close to the middle between recreational and non-recreational we'll flag it for review by MRP. Periodically we'll retrain the classifier with the latest inputs.
+Once the application is running in production, if a boat's classification is close to the middle between recreational and non-recreational we will flag it for review by MRP. Periodically we will retrain the classifier with the latest inputs.
 
-As we often say when developing an application, make it work then make it fast. Currently we're reading video with one frame per second and it takes us over one second to classify that that frame. We believe there is a lot of room to improve our performance. Some preliminary results show that lowering the resolution, normalizing the images and other image transforms improve performance by 4x while not hurting accuracy. Also, we'd like to try YOLO v5 in our counting-by-tracking-by-detection method and see how that affects performance and accuracy.
+As we often say when developing an application, make it work then make it fast. Currently we are reading video with one frame per second and it takes us over one second to classify that that frame. We believe there is a lot of room to improve our performance. Some preliminary results show that lowering the resolution, normalizing the images and other image transforms improve performance by 4x while not hurting accuracy. Also, we would like to try YOLO v5 in our counting-by-tracking-by-detection method and see how that affects performance and accuracy.
 
 \section{More Information}
 
