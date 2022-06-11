@@ -45,7 +45,7 @@ Oregon Department of Fish and Wildlife\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   The Oregon Department of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up samplers to spend more time getting biological fish data.
+   The Oregon Department of Fish and Wildlife (ODFW) has setup cameras at several ports and harbors on the Oregon Coast. Currently this video is reviewed by employees, called port samplers, to get counts of boats that are going out fishing. This information, combined with other information, is used to get what is called a Catch Effort Estimation which in turn is used to open or close fisheries. Automating this process would expand the count to all days of the week, broaden it to other ports and free up port samplers to spend more time getting biological fish data.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
@@ -59,7 +59,7 @@ We propose using transfer learning to identify boats in images taken from port s
 
 \subsection{Classifying}
 
-After the relatively simple task of parsing the video into images, the next thing to do is to perform instance segmentation on each frame of the video. There are many comprehensive comparisons of different detection methods \cite{pytorch_models} but we chose to compare a few that are available as pre-trained PyTorch models on our data, using our hardware. [MORE]
+After the relatively simple task of parsing the video into images, the next thing to do is to perform instance segmentation on each frame of the video. There are many comprehensive comparisons of different detection methods \cite{pytorch_models} but we chose to compare a few that are available as pre-trained PyTorch models on our data, using our hardware.
 
 \subsection{Recreational vs. Non-recreational}
 
@@ -72,7 +72,7 @@ For the most difficult part of this project, MOT, we plan on trying three differ
 \begin{figure*}[t]
   \centering
     \includegraphics[scale=.4]{roughFlow.png}
-    \caption{A. Video is captured by cameras. B. Every two hours data is uploaded using SpaceX Starlink satellite internet. C.-D. Once the video is received it is parsed into sequential frames. E. Semantic segmentation is performed using Mask RCNN pre-trained model. F. Get instances from segmentation and group them together. Once grouped, classify all of the images as either recreational and non-recreational. The classification of the highest value wins. G. Record count of recreational boats in 30 minute intervals.}
+    \caption{(A) Video is captured by cameras. (B) Every two hours data is uploaded using SpaceX Starlink satellite internet. (C)-(D) Once the video is received it is parsed into sequential frames. (E) Semantic segmentation is performed using Mask RCNN pre-trained model. (F) Get instances from segmentation and group them together. Once grouped, classify all of the images as either recreational and non-recreational. The classification of the highest value wins. (G) Record count of recreational boats in 30 minute intervals.}
     \label{fig:pipline}
   \hfill
 \end{figure*}
@@ -93,32 +93,37 @@ As we knew MOT was going to be the crux of our success we split our efforts into
 
 \subsection{SORT}
 
-To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple. 
+To get the final count we started by reviewing several tracking algorithms and decided to start with SORT \cite{Bewley_2016}. We thought this was a good place to start as the 'S' stands for simple.  The integration to our dataset was simple enough, but the results were sporadic and not reliable to derive a final count - reliable instance tracking is crucial to determining an exact count of unique identifications.
 
 \subsection{Counting-by-tracking-by-detection}
 
-The next effort is to use object detection to track the boats then associate detections in adjacent frames to get a count. Mask RCNN handles instance identification in an ordered list fashion.  Two sequential frames with multiple instances will reclassify in the same order.  Using this baseline, we will try to create a set of rules to ensure accuracy on counting and gaining some information on the trajectory of identified boats by calculating movement speed based on image offsets, count frames that the boat instance occurred in, and proof check that it had a realistic movement off-screen, and traveled an appropriate distance to get there (which helped disregard issues in classification such as occasional double counting overlaps and false positives).  During the span of frame counts, we again referred back to the image classification per frame. One of our stretch goals was to get a count of people on board to do this we count the max frame of any people classified within the bounding box of the boat to get an approximate passenger count. Also using this trajectory speed, the width of the camera observation, and the y position, we are able to calculate the speed of the boat. 
+In an effort to improve instance detection within the bounds of our specific applications, we decided to create our own instance identification tracking by relying on segmentation masks.  We found the brilliant MaskRCNN, which uses a ResNet101 backbone to derive a list of rois, bounding boxes, and simple classifications.
+
+Identifying an instance on a single frame only requires the simple  segmentation of classifications.  Retaining an instance between multiple frame classifications is what posed a larger challenge, requiring dynamic identifiers to retain, omit, and introduce new instances as the temporal state of the scene progresses.  
+
+To construct a proper result set, we need to process the results from our instance segmentation and derive a set of behaviours that satisfies the potential actions that an identified boat will take across the scene.  This will allow us to represent and track outcomes, as well as create edge case detections to deal with the unfortunately sporadic nature of image classification over long periods of time.
+
+
+\subsection{Counting without tracking}
+
+As an alternative to processing boat results, another option would be an LSTM where the input is boat centroid locations and the output is the running total. We don't have any data for this approach so we'll make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we'll use a classification structure and allow outputs from 0 to 10. 
+
+Making these assumptions allows us to use mock data to train the network. We'll generate lines that have a small slope and a wide range of values for the y-intercept. Then we'll sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
 
 \begin{figure*}[t]
   \centering
     \includegraphics[scale=.75]{WinonaJ.png}
-    \caption{Red outline is the actual box}
+    \caption{Red box is the value from the test data.}
     \label{fig:WinonaJ}
   \hfill
 \end{figure*}
 \section{Results} 
-\subsection{Counting without tracking}
-
-As we don't actually need to track the boats in our video, we propose creating an LSTM where the input is boat centroid locations and the output is the running total. We don't have any data for this approach so we'll make some assumptions about a large bulk of the data. The first assumption is that the majority of the boats travel directly from one side of the screen to the other. Second, depending on speed, boats occur in four to eight frames total. Third, there are never more that five boats in any given frame. And finally, we'll use a classification structure and allow outputs from 0 to 10. 
-
-Making these assumptions allows us to generate data to train the network. We'll generate lines that have a small slope and a wide range of values for the y-intercept. Then we'll sample these lines four to eight times and add some noise to the input and output. These samples will stand in for the boat centroid and each line will represent a boat which is our classification for this network.
-
 
 \subsection{Classifying}
 
 Table \ref{tab:ModelPerf} shows the performance of a few different pre-trained models we tested. These were tested on an older server without a GPU so the raw times aren't important but the relative performance is. For accuracy, we manually created a test set of 387 images with bounding boxes and compared our bounding boxes to the predicted bounding boxes using intersection over union.
 
-We didn't find that outputs from different models got the exact same bounding boxes so there may be some room boost accuracy with ensemble learning.
+We didn't find that outputs from different models got the exact same bounding boxes so there may be some room boost accuracy with ensemble learning. For an example, see \ref{fig:WinonaJ}.
 
 This effort was in parallel with our other efforts so we ended up using Mask RCNN in our tracking but will explore using YOLO v5 in the future.
 
@@ -134,7 +139,7 @@ This effort was in parallel with our other efforts so we ended up using Mask RCN
     Retina Net\cite{pytorch_retinanet_resnet50_fpn} & 69\% & 33m 48s\\
     \bottomrule
   \end{tabular}
-  \caption{YOLO FTW}
+  \caption{}
   \label{tab:ModelPerf}
 \end{table}
 
@@ -165,15 +170,30 @@ While the implementation of the SORT algorithm was fairly straight forward, we f
 
 \subsection{Counting-by-tracking-by-detection}
 
-Talk about edge cases? Occlusion? Austin powers boat?
+Using MaskRCNN in conjunction with our transfer learning model created a great foundation for processing the behaviour driven actions of our projected boat instances.  
+
+Our framework for instance identification was written with the idea of identifying the different states or current status of a boat.  A trajectory of a boat is determined by its centroid's movement across multiple frames.  Speed can be determined by difference in position.  Using these factors, we are able to distinguish and eliminate false positives that occur in the neural network identification results, such as double/overlapping bounding boxes and 'pop-in' instances that would severely affect the instance count.
+
+This also allows us to fine tune a set of object oriented parameters for restricting instance detection, such as setting boundaries for new instance introductions (a boat never enters in the middle of the frame), frame count thresholds for ensuring the number of frames used for a trajectory is realistic, and movement side thresholds for predictive analysis on when a boat is intending to leave the frame.  All of these parameters can be set and tuned to allow for another layer of accuracy.
+
+Retaining a set of frames for a given instance allows for some additional performance reinforcement in our individual classification as well.  Rather then identify if a single instance of a boat is recreational or commercial, we are able to look back at all instances, and find a maximum agreed classification.  The same goes for counting the number of passengers; we can look back and find which frame shows the most identified instances of people and make decisions based on a set of temporal data.
+
+Overall, this methodology has allowed us to correct any issues and seems to be an effective method for reliable accuracy.
 
 \subsection{Counting without tracking}
 
-The results of our LSTM were very promising. It did take quite a bit of hyperparameter tuning but we were able to achieve validation accuracy of 94\%. As our counting by tracking efforts were also positive we focused a lot of our efforts on that and didn't test the LSTM with real data. Overall this was a very positive outcome and we will continue to pursue it.
+The results of our LSTM were also very promising. It did take quite a bit of hyperparameter tuning, but we were able to achieve validation accuracy of 94\%. As our tracking efforts were also positive we focused a lot of our efforts on that and didn't test the LSTM with real data. Overall this was a very positive outcome and we will continue to pursue it.
 
 \subsection{Putting it all together}
 
-<Comparing our count count to MRP count/?
+Our first efforts at comparing our output to test data did not go very well but they did help us identify quite a few edge cases. For a large portion of time periods we were able to achieve 100\% accuracy, for others it was 0\%. Overall, we were encouraged by this result as the vast majority of footage is just water or water with a single boat. By the time of our due date we weren't able to run the latest version of our application for an entire days worth of video. However we are confident that we've achieved a much improved accuracy as we've tested it on several edge cases. There are two that standout, one is a boat turning around that hovers on the edge of the frame for several frame that was getting miss counted and another was one of the few times several recreational boats are in frame with a non-recreational boat. Both of these instances were fixed with our latest code, Figure \ref{fig:sequence} contains the output of one such scenario. We've animated these scenarios and links are available in the More Information section. 
+
+\begin{figure}
+ \center
+  \includegraphics[scale=.8]{Sequence2.png}
+  \caption{Each boat is assigned an ID and a classification. This image has annotations with those values.}
+  \label{fig:sequence}
+\end{figure}
 
 \section{Future Work}
 
@@ -181,7 +201,20 @@ There are a number of stable models available from PyTorch and there are quite a
 
 Once the application is running in production, if a boat's classification is close to the middle between recreational and non-recreational we'll flag it for review by MRP. Periodically we'll retrain the classifier with the latest inputs.
 
-As we often say when developing a project, make it work then make it fast. Currently we're reading video with one frame per second and it takes us over one second to classify that that frame. We believe there is a lot of room to improve our performance. Some preliminary results show that lowering the resolution and other image transforms improve performance by 4x while not hurting accuracy. Also, we'd like to try YOLO v5 in our counting-by-tracking-by-detection method and seem how that affects performance and accuracy.
+As we often say when developing an application, make it work then make it fast. Currently we're reading video with one frame per second and it takes us over one second to classify that that frame. We believe there is a lot of room to improve our performance. Some preliminary results show that lowering the resolution, normalizing the images and other image transforms improve performance by 4x while not hurting accuracy. Also, we'd like to try YOLO v5 in our counting-by-tracking-by-detection method and see how that affects performance and accuracy.
+
+\section{More Information}
+
+\begin{itemize}
+    \renewcommand\labelitemi{--}
+    \item Code to compare different classification methods: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/PreTrainedTestHarness.py}
+    \item Code to process videos, get boat segments, and save them in different directories: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/ProcessImages.py}
+    \item Code for line counting LSTM: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/TrackCountingLSTM.py} 
+    \item GIF of best output using SORT to count boats: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/ProgressGifs/20220520T1440\%20SORT\%20Tracking.gif}
+    \item GIF of edge case with turning boat: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/ProgressGifs/BoatTurn-instance.gif}
+    \item GIF of complicated scenario with recreational and non-recreational boats: \url{https://github.com/andrewboes/MachineLearning/blob/master/535/Project/ProgressGifs/Instances\%20Classified.gif}
+    \item Colab notebook puting it all together: \url{https://colab.research.google.com/drive/1eumK3l4zKXiu7IGFOe0yQUvSsBSlPAVv}
+\end{itemize}
 
 \begin{comment}
 
