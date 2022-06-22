@@ -14,7 +14,7 @@ import tator
 
 def main():
 
-  apiKey = '3fa1c150ecd7bdec71e12663158f115f1b0c547d'
+  apiKey = ''
   api = tator.get_api(host='https://cloud.tator.io', token=apiKey)
   outFolder = './tatorDownloads/'
   mediaId = 1123613
